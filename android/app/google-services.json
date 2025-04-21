@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "371968211210",
+    "project_id": "docverify-efb26",
+    "storage_bucket": "docverify-efb26.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:371968211210:android:64ac651be6bf595e15a2f3",
+        "android_client_info": {
+          "package_name": "com.example.docverify"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBSygVgg9WQoh90pOR-CDU_Y8uyuDIYNuw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
