@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Add this import
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -13,15 +14,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore =
+      FirebaseFirestore.instance; // Firestore instance
 
   Future<void> _register() async {
     try {
+      // 1. Create user in Firebase Auth
       final userCred = await _auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+
+      // 2. Store email in Firestore under the user's UID
+      await _firestore.collection('users').doc(userCred.user!.uid).set({
+        'email': _emailController.text.trim(), // Store email
+        'createdAt':
+            FieldValue.serverTimestamp(), // Optional: Add registration time
+      });
+
+      // 3. Send verification email
       await userCred.user!.sendEmailVerification();
 
+      // 4. Show success message and redirect to login
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Verification email sent!')));
