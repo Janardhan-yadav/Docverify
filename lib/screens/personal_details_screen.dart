@@ -33,23 +33,24 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).set(
-        {
-          'name': _nameController.text.trim(),
-          'fatherName': _fatherNameController.text.trim(),
-          'motherName': _motherNameController.text.trim(),
-          'dob': _dobController.text.trim(),
-          'address': _addressController.text.trim(),
-        },
-        SetOptions(merge: true),
-      ); // merge: true prevents overwriting existing fields
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'name': _nameController.text.trim(),
+        'fatherName': _fatherNameController.text.trim(),
+        'motherName': _motherNameController.text.trim(),
+        'dob': _dobController.text.trim(),
+        'address': _addressController.text.trim(),
+        'hasCompletedProfile': true, // Add this flag
+      }, SetOptions(merge: true));
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Details saved successfully')),
       );
 
-      // Navigate to next screen (replace with your actual screen)
-      // Navigator.push(context, MaterialPageRoute(builder: (_) => NextScreen()));
+      Navigator.pushReplacement(
+        // Use pushReplacement to prevent going back
+        context,
+        MaterialPageRoute(builder: (_) => const VerifyHallTicketPage()),
+      );
     } catch (e) {
       ScaffoldMessenger.of(
         context,
