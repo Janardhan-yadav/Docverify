@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'verify_hallticket_page.dart';
+import 'faq_help_screen.dart'; // Import FAQHelpScreen
 
 class PersonalDetailsScreen extends StatefulWidget {
   const PersonalDetailsScreen({super.key});
@@ -147,6 +148,35 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       style: TextStyle(fontSize: 18, color: Colors.white),
                     ),
                   ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 16.0, right: 16.0),
+        child: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const FAQHelpScreen()),
+            );
+          },
+          backgroundColor: Colors.blue, // Blue background
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.question_mark,
+                color: Colors.white, // White question mark
+                size: 24,
+              ),
+              Text(
+                'Help',
+                style: TextStyle(
+                  color: Colors.blue[900], // Darker blue text for visibility
+                  fontSize: 10, // Smaller font to fit within the circle
                 ),
               ),
             ],

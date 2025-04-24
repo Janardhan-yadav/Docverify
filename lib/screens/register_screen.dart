@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'login_screen.dart';
+import 'faq_help_screen.dart'; // Import FAQHelpScreen
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -13,10 +14,20 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _reenterPasswordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  bool _obscureText = true; // State to toggle password visibility
 
   Future<void> _register() async {
+    if (_passwordController.text.trim() !=
+        _reenterPasswordController.text.trim()) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Passwords do not match!')));
+      return;
+    }
+
     try {
       final userCred = await _auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
@@ -100,12 +111,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             borderRadius: BorderRadius.circular(10),
                             borderSide: BorderSide.none,
                           ),
-                          suffixIcon: Icon(
-                            Icons.visibility_off,
-                            color: Colors.grey,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureText
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscureText = !_obscureText;
+                              });
+                            },
                           ),
                         ),
-                        obscureText: true,
+                        obscureText: _obscureText,
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _reenterPasswordController,
+                        decoration: InputDecoration(
+                          labelText: 'Re-enter Password',
+                          prefixIcon: Icon(Icons.lock, color: Colors.grey),
+                          filled: true,
+                          fillColor: Colors.grey[200],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureText
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscureText = !_obscureText;
+                              });
+                            },
+                          ),
+                        ),
+                        obscureText: _obscureText,
                       ),
                       const SizedBox(height: 10),
                       Align(
@@ -159,6 +207,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ],
                   ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 16.0, right: 16.0),
+        child: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const FAQHelpScreen()),
+            );
+          },
+          backgroundColor: Colors.white, // White circular background
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.question_mark,
+                color: const Color(0xFF003087), // Blue question mark
+                size: 24,
+              ),
+              Text(
+                'Help',
+                style: TextStyle(
+                  color: const Color(0xFF003087), // Blue text
+                  fontSize: 10, // Smaller font to fit within the circle
                 ),
               ),
             ],

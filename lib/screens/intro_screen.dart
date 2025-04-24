@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
+import 'faq_help_screen.dart'; // Import FAQHelpScreen
 
 class IntroScreen extends StatelessWidget {
   const IntroScreen({super.key});
@@ -116,6 +117,35 @@ class IntroScreen extends StatelessWidget {
             ),
             const Spacer(flex: 1), // Reduced flex to adjust spacing
           ],
+        ),
+      ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 16.0, right: 16.0),
+        child: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const FAQHelpScreen()),
+            );
+          },
+          backgroundColor: Colors.white, // White circular background
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.question_mark,
+                color: const Color(0xFF003087), // Blue question mark
+                size: 24,
+              ),
+              Text(
+                'Help',
+                style: TextStyle(
+                  color: const Color(0xFF003087), // Blue text
+                  fontSize: 10, // Smaller font to fit within the circle
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

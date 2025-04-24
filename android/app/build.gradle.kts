@@ -11,7 +11,7 @@ plugins {
 
 android {
     namespace = "com.example.docverify"
-    compileSdk = 34
+    compileSdk = 35
     ndkVersion = "29.0.13113456"
 
     compileOptions {
