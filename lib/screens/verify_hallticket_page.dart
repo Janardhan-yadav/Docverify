@@ -2,9 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
 import 'settings_page.dart';
+import 'validation_results_page.dart'; // Import the new page
 
-class VerifyHallTicketPage extends StatelessWidget {
+class VerifyHallTicketPage extends StatefulWidget {
+  // Change to StatefulWidget to manage state
   const VerifyHallTicketPage({super.key});
+
+  @override
+  _VerifyHallTicketPageState createState() => _VerifyHallTicketPageState();
+}
+
+class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
+  final _hallTicketController = TextEditingController();
+  final _registrationController = TextEditingController();
+  String? _selectedCategory = 'GENERAL'; // Default category
+
+  @override
+  void dispose() {
+    _hallTicketController.dispose();
+    _registrationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,11 +119,13 @@ class VerifyHallTicketPage extends StatelessWidget {
             _buildEditableField(
               'HALLTICKET NUMBER',
               'Enter your hall ticket number',
+              _hallTicketController,
             ),
             const SizedBox(height: 20),
             _buildEditableField(
               'REGISTRATION NUMBER',
               'Enter your registration number',
+              _registrationController,
             ),
             const SizedBox(height: 20),
             _buildCategoryDropdown(),
@@ -145,7 +165,19 @@ class VerifyHallTicketPage extends StatelessWidget {
             Center(
               child: ElevatedButton(
                 onPressed: () {
-                  // Add verification logic here
+                  // Navigate to ValidationResultsPage with the input data
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => ValidationResultsPage(
+                            name: currentUser?.displayName ?? 'Not available',
+                            hallTicketNumber: _hallTicketController.text,
+                            registrationNumber: _registrationController.text,
+                            category: _selectedCategory ?? 'GENERAL',
+                          ),
+                    ),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
@@ -190,7 +222,11 @@ class VerifyHallTicketPage extends StatelessWidget {
     );
   }
 
-  Widget _buildEditableField(String label, String hintText) {
+  Widget _buildEditableField(
+    String label,
+    String hintText,
+    TextEditingController controller,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -200,6 +236,7 @@ class VerifyHallTicketPage extends StatelessWidget {
         ),
         const SizedBox(height: 5),
         TextFormField(
+          controller: controller,
           decoration: InputDecoration(
             hintText: hintText,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -215,7 +252,6 @@ class VerifyHallTicketPage extends StatelessWidget {
 
   Widget _buildCategoryDropdown() {
     const List<String> categories = ['GENERAL', 'OBC', 'SC/ST', 'OTHER'];
-    String? selectedCategory = categories[0];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -226,7 +262,7 @@ class VerifyHallTicketPage extends StatelessWidget {
         ),
         const SizedBox(height: 5),
         DropdownButtonFormField<String>(
-          value: selectedCategory,
+          value: _selectedCategory,
           items:
               categories.map((String category) {
                 return DropdownMenuItem<String>(
@@ -235,7 +271,9 @@ class VerifyHallTicketPage extends StatelessWidget {
                 );
               }).toList(),
           onChanged: (String? newValue) {
-            selectedCategory = newValue;
+            setState(() {
+              _selectedCategory = newValue;
+            });
           },
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
