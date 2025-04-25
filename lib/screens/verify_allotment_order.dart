@@ -404,14 +404,6 @@ class _VerifyAllotmentOrderPageState extends State<VerifyAllotmentOrderPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Verify Allotment Order:',
-              style: GoogleFonts.poppins(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.indigo,
-              ),
-            ),
             const SizedBox(height: 20),
             _buildEditableField('NAME', 'Enter your name', _nameController),
             const SizedBox(height: 20),

@@ -4,35 +4,35 @@ import 'package:google_fonts/google_fonts.dart';
 import 'settings_page.dart';
 import 'login_screen.dart';
 import 'faq_help_screen.dart';
-import 'verify_joining_report.dart';
-import 'verify_tenth_memo.dart'; // Import for navigation
+import 'verify_income_certificate.dart';
+import 'document_validation_summary.dart'; // Import for navigation
 
-class ValidationResultsJoiningReportPage extends StatelessWidget {
+class ValidationResultsIncomeCertificatePage extends StatelessWidget {
   final String name;
   final String fatherName;
-  final String hallTicketNumber;
-  final String admissionNumber;
+  final String applicationNumber;
+  final String date;
 
-  const ValidationResultsJoiningReportPage({
+  const ValidationResultsIncomeCertificatePage({
     super.key,
     required this.name,
     required this.fatherName,
-    required this.hallTicketNumber,
-    required this.admissionNumber,
+    required this.applicationNumber,
+    required this.date,
   });
 
-  // Validation logic (all fields are valid for this demo)
+  // Simple validation logic (replace with actual backend validation)
   bool _isValidField(String field) {
-    return true; // Set all fields as valid to mark them as matched
+    return field.isNotEmpty && field.length >= 3; // Example validation rule
   }
 
   @override
   Widget build(BuildContext context) {
-    // Validation results (all fields are valid for demo)
+    // Simulate validation results (APPLICATION NUMBER is valid, others are invalid for demo)
     bool isNameValid = _isValidField(name);
     bool isFatherNameValid = _isValidField(fatherName);
-    bool isHallTicketValid = _isValidField(hallTicketNumber);
-    bool isAdmissionNumberValid = _isValidField(admissionNumber);
+    bool isApplicationNumberValid = _isValidField(applicationNumber);
+    bool isDateValid = _isValidField(date);
     final currentUser = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
@@ -150,7 +150,7 @@ class ValidationResultsJoiningReportPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Validation Results of Joining Report',
+              'Validation Results of Income Certificate',
               style: GoogleFonts.poppins(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -177,10 +177,11 @@ class ValidationResultsJoiningReportPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildResultRow('NAME', isNameValid),
-                    _buildResultRow("FATHER'S NAME", isFatherNameValid),
-                    _buildResultRow('HALL TICKET NUMBER', isHallTicketValid),
-                    _buildResultRow('ADMISSION NUMBER', isAdmissionNumberValid),
+                    if (isApplicationNumberValid)
+                      _buildResultRow(
+                        'APPLICATION NUMBER',
+                        isApplicationNumberValid,
+                      ),
                   ],
                 ),
               ),
@@ -205,7 +206,15 @@ class ValidationResultsJoiningReportPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    // No discrepancies since all fields are valid
+                    if (!isNameValid) _buildResultRow('NAME', isNameValid),
+                    if (!isFatherNameValid)
+                      _buildResultRow("FATHER'S NAME", isFatherNameValid),
+                    if (!isApplicationNumberValid)
+                      _buildResultRow(
+                        'APPLICATION NUMBER',
+                        isApplicationNumberValid,
+                      ),
+                    if (!isDateValid) _buildResultRow('DATE', isDateValid),
                   ],
                 ),
               ),
@@ -247,7 +256,8 @@ class ValidationResultsJoiningReportPage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const VerifyTenthMemoPage(),
+                      builder:
+                          (context) => const DocumentValidationSummaryPage(),
                     ),
                   );
                 },

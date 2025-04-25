@@ -5,21 +5,22 @@ import 'package:google_fonts/google_fonts.dart';
 import 'settings_page.dart';
 import 'login_screen.dart';
 import 'faq_help_screen.dart';
-import 'validation_results_joiningreport.dart'; // Import for navigation
+import 'validation_results_incomecertificate.dart'; // Import for navigation
 
-class VerifyJoiningReportPage extends StatefulWidget {
-  const VerifyJoiningReportPage({super.key});
+class VerifyIncomeCertificatePage extends StatefulWidget {
+  const VerifyIncomeCertificatePage({super.key});
 
   @override
-  _VerifyJoiningReportPageState createState() =>
-      _VerifyJoiningReportPageState();
+  _VerifyIncomeCertificatePageState createState() =>
+      _VerifyIncomeCertificatePageState();
 }
 
-class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
+class _VerifyIncomeCertificatePageState
+    extends State<VerifyIncomeCertificatePage> {
   final _nameController = TextEditingController();
   final _fatherNameController = TextEditingController();
-  final _hallTicketController = TextEditingController();
-  final _admissionController = TextEditingController();
+  final _applicationNumberController = TextEditingController();
+  final _dateController = TextEditingController();
   String? _uploadedFileName;
   String? _filePath;
 
@@ -27,8 +28,8 @@ class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
   void dispose() {
     _nameController.dispose();
     _fatherNameController.dispose();
-    _hallTicketController.dispose();
-    _admissionController.dispose();
+    _applicationNumberController.dispose();
+    _dateController.dispose();
     super.dispose();
   }
 
@@ -234,7 +235,7 @@ class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Verify Joining Report',
+          'Verify Income Certificate',
           style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -359,16 +360,12 @@ class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
             ),
             const SizedBox(height: 20),
             _buildEditableField(
-              'HALL TICKET NUMBER',
-              'Enter hall ticket number',
-              _hallTicketController,
+              'APPLICATION NUMBER',
+              'Enter application number',
+              _applicationNumberController,
             ),
             const SizedBox(height: 20),
-            _buildEditableField(
-              'ADMISSION NUMBER',
-              'Enter admission number',
-              _admissionController,
-            ),
+            _buildEditableField('DATE', 'DD/MM/YYYY', _dateController),
             const SizedBox(height: 20),
             _buildUploadButton(),
             const SizedBox(height: 30),
@@ -379,11 +376,12 @@ class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
                     context,
                     MaterialPageRoute(
                       builder:
-                          (context) => ValidationResultsJoiningReportPage(
+                          (context) => ValidationResultsIncomeCertificatePage(
                             name: _nameController.text,
                             fatherName: _fatherNameController.text,
-                            hallTicketNumber: _hallTicketController.text,
-                            admissionNumber: _admissionController.text,
+                            applicationNumber:
+                                _applicationNumberController.text,
+                            date: _dateController.text,
                           ),
                     ),
                   );

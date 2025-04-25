@@ -425,14 +425,6 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Verify Hall Ticket:',
-              style: GoogleFonts.poppins(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.indigo,
-              ),
-            ),
             const SizedBox(height: 20),
             _buildInfoField(
               'NAME',

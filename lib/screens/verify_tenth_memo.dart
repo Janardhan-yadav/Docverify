@@ -5,21 +5,21 @@ import 'package:google_fonts/google_fonts.dart';
 import 'settings_page.dart';
 import 'login_screen.dart';
 import 'faq_help_screen.dart';
-import 'validation_results_joiningreport.dart'; // Import for navigation
+import 'validation_results_tenthmemo.dart'; // Import for navigation
 
-class VerifyJoiningReportPage extends StatefulWidget {
-  const VerifyJoiningReportPage({super.key});
+class VerifyTenthMemoPage extends StatefulWidget {
+  const VerifyTenthMemoPage({super.key});
 
   @override
-  _VerifyJoiningReportPageState createState() =>
-      _VerifyJoiningReportPageState();
+  _VerifyTenthMemoPageState createState() => _VerifyTenthMemoPageState();
 }
 
-class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
+class _VerifyTenthMemoPageState extends State<VerifyTenthMemoPage> {
   final _nameController = TextEditingController();
   final _fatherNameController = TextEditingController();
-  final _hallTicketController = TextEditingController();
-  final _admissionController = TextEditingController();
+  final _rollNumberController = TextEditingController();
+  final _schoolNameController = TextEditingController();
+  final _gpaController = TextEditingController();
   String? _uploadedFileName;
   String? _filePath;
 
@@ -27,8 +27,9 @@ class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
   void dispose() {
     _nameController.dispose();
     _fatherNameController.dispose();
-    _hallTicketController.dispose();
-    _admissionController.dispose();
+    _rollNumberController.dispose();
+    _schoolNameController.dispose();
+    _gpaController.dispose();
     super.dispose();
   }
 
@@ -234,7 +235,7 @@ class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Verify Joining Report',
+          'Verify 10th Memo',
           style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -302,7 +303,7 @@ class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.help, color: Colors.blue),
+              leading: Icon(Icons.help, color: Colors.blue),
               title: Text(
                 'Help & FAQ',
                 style: GoogleFonts.poppins(fontSize: 16),
@@ -359,16 +360,18 @@ class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
             ),
             const SizedBox(height: 20),
             _buildEditableField(
-              'HALL TICKET NUMBER',
-              'Enter hall ticket number',
-              _hallTicketController,
+              'ROLL NUMBER',
+              'Enter roll number',
+              _rollNumberController,
             ),
             const SizedBox(height: 20),
             _buildEditableField(
-              'ADMISSION NUMBER',
-              'Enter admission number',
-              _admissionController,
+              'SCHOOL NAME',
+              'Enter school name',
+              _schoolNameController,
             ),
+            const SizedBox(height: 20),
+            _buildEditableField('GPA', 'Enter GPA', _gpaController),
             const SizedBox(height: 20),
             _buildUploadButton(),
             const SizedBox(height: 30),
@@ -379,11 +382,12 @@ class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
                     context,
                     MaterialPageRoute(
                       builder:
-                          (context) => ValidationResultsJoiningReportPage(
+                          (context) => ValidationResultsTenthMemoPage(
                             name: _nameController.text,
                             fatherName: _fatherNameController.text,
-                            hallTicketNumber: _hallTicketController.text,
-                            admissionNumber: _admissionController.text,
+                            rollNumber: _rollNumberController.text,
+                            schoolName: _schoolNameController.text,
+                            gpa: _gpaController.text,
                           ),
                     ),
                   );

@@ -5,21 +5,22 @@ import 'package:google_fonts/google_fonts.dart';
 import 'settings_page.dart';
 import 'login_screen.dart';
 import 'faq_help_screen.dart';
-import 'validation_results_joiningreport.dart'; // Import for navigation
+import 'validation_results_castecertificate.dart'; // Import for navigation
 
-class VerifyJoiningReportPage extends StatefulWidget {
-  const VerifyJoiningReportPage({super.key});
+class VerifyCasteCertificatePage extends StatefulWidget {
+  const VerifyCasteCertificatePage({super.key});
 
   @override
-  _VerifyJoiningReportPageState createState() =>
-      _VerifyJoiningReportPageState();
+  _VerifyCasteCertificatePageState createState() =>
+      _VerifyCasteCertificatePageState();
 }
 
-class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
+class _VerifyCasteCertificatePageState
+    extends State<VerifyCasteCertificatePage> {
   final _nameController = TextEditingController();
   final _fatherNameController = TextEditingController();
-  final _hallTicketController = TextEditingController();
-  final _admissionController = TextEditingController();
+  final _applicationNumberController = TextEditingController();
+  String? _caste = 'Select';
   String? _uploadedFileName;
   String? _filePath;
 
@@ -27,8 +28,7 @@ class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
   void dispose() {
     _nameController.dispose();
     _fatherNameController.dispose();
-    _hallTicketController.dispose();
-    _admissionController.dispose();
+    _applicationNumberController.dispose();
     super.dispose();
   }
 
@@ -54,6 +54,50 @@ class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
           controller: controller,
           decoration: InputDecoration(
             hintText: hintText,
+            hintStyle: GoogleFonts.poppins(color: Colors.grey),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 15,
+              vertical: 12,
+            ),
+          ),
+          style: GoogleFonts.poppins(fontSize: 16),
+        ),
+      ],
+    );
+  }
+
+  // Build dropdown field
+  Widget _buildDropdownField(
+    String label,
+    String? value,
+    List<String> items,
+    Function(String?) onChanged,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.indigo,
+          ),
+        ),
+        const SizedBox(height: 5),
+        DropdownButtonFormField<String>(
+          value: value,
+          items:
+              items.map((String item) {
+                return DropdownMenuItem<String>(
+                  value: item,
+                  child: Text(item, style: GoogleFonts.poppins(fontSize: 16)),
+                );
+              }).toList(),
+          onChanged: onChanged,
+          decoration: InputDecoration(
+            hintText: 'Select',
             hintStyle: GoogleFonts.poppins(color: Colors.grey),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             contentPadding: const EdgeInsets.symmetric(
@@ -230,11 +274,18 @@ class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
+    final List<String> casteOptions = [
+      'Select',
+      'SC',
+      'ST',
+      'OBC',
+      'General',
+    ]; // Example caste options
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Verify Joining Report',
+          'Verify Caste Certificate',
           style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -359,16 +410,18 @@ class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
             ),
             const SizedBox(height: 20),
             _buildEditableField(
-              'HALL TICKET NUMBER',
-              'Enter hall ticket number',
-              _hallTicketController,
+              'APPLICATION NUMBER',
+              'Enter application number',
+              _applicationNumberController,
             ),
             const SizedBox(height: 20),
-            _buildEditableField(
-              'ADMISSION NUMBER',
-              'Enter admission number',
-              _admissionController,
-            ),
+            _buildDropdownField('CASTE', _caste, casteOptions, (
+              String? newValue,
+            ) {
+              setState(() {
+                _caste = newValue;
+              });
+            }),
             const SizedBox(height: 20),
             _buildUploadButton(),
             const SizedBox(height: 30),
@@ -379,11 +432,12 @@ class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
                     context,
                     MaterialPageRoute(
                       builder:
-                          (context) => ValidationResultsJoiningReportPage(
+                          (context) => ValidationResultsCasteCertificatePage(
                             name: _nameController.text,
                             fatherName: _fatherNameController.text,
-                            hallTicketNumber: _hallTicketController.text,
-                            admissionNumber: _admissionController.text,
+                            applicationNumber:
+                                _applicationNumberController.text,
+                            caste: _caste ?? 'Select',
                           ),
                     ),
                   );

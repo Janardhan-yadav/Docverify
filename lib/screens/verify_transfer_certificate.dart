@@ -5,21 +5,23 @@ import 'package:google_fonts/google_fonts.dart';
 import 'settings_page.dart';
 import 'login_screen.dart';
 import 'faq_help_screen.dart';
-import 'validation_results_joiningreport.dart'; // Import for navigation
+import 'validation_results_transfercertificate.dart'; // Import for navigation
 
-class VerifyJoiningReportPage extends StatefulWidget {
-  const VerifyJoiningReportPage({super.key});
+class VerifyTransferCertificatePage extends StatefulWidget {
+  const VerifyTransferCertificatePage({super.key});
 
   @override
-  _VerifyJoiningReportPageState createState() =>
-      _VerifyJoiningReportPageState();
+  _VerifyTransferCertificatePageState createState() =>
+      _VerifyTransferCertificatePageState();
 }
 
-class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
+class _VerifyTransferCertificatePageState
+    extends State<VerifyTransferCertificatePage> {
   final _nameController = TextEditingController();
   final _fatherNameController = TextEditingController();
-  final _hallTicketController = TextEditingController();
-  final _admissionController = TextEditingController();
+  final _admissionNumberController = TextEditingController();
+  final _collegeNameController = TextEditingController();
+  final _marksOfIdentificationController = TextEditingController();
   String? _uploadedFileName;
   String? _filePath;
 
@@ -27,8 +29,9 @@ class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
   void dispose() {
     _nameController.dispose();
     _fatherNameController.dispose();
-    _hallTicketController.dispose();
-    _admissionController.dispose();
+    _admissionNumberController.dispose();
+    _collegeNameController.dispose();
+    _marksOfIdentificationController.dispose();
     super.dispose();
   }
 
@@ -234,7 +237,7 @@ class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Verify Joining Report',
+          'Verify Transfer Certificate',
           style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -359,15 +362,21 @@ class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
             ),
             const SizedBox(height: 20),
             _buildEditableField(
-              'HALL TICKET NUMBER',
-              'Enter hall ticket number',
-              _hallTicketController,
+              'ADMISSION NUMBER',
+              'Enter admission number',
+              _admissionNumberController,
             ),
             const SizedBox(height: 20),
             _buildEditableField(
-              'ADMISSION NUMBER',
-              'Enter admission number',
-              _admissionController,
+              'COLLEGE NAME',
+              'Enter college name',
+              _collegeNameController,
+            ),
+            const SizedBox(height: 20),
+            _buildEditableField(
+              'MARKS OF IDENTIFICATION',
+              'Enter marks of identification',
+              _marksOfIdentificationController,
             ),
             const SizedBox(height: 20),
             _buildUploadButton(),
@@ -379,11 +388,13 @@ class _VerifyJoiningReportPageState extends State<VerifyJoiningReportPage> {
                     context,
                     MaterialPageRoute(
                       builder:
-                          (context) => ValidationResultsJoiningReportPage(
+                          (context) => ValidationResultsTransferCertificatePage(
                             name: _nameController.text,
                             fatherName: _fatherNameController.text,
-                            hallTicketNumber: _hallTicketController.text,
-                            admissionNumber: _admissionController.text,
+                            admissionNumber: _admissionNumberController.text,
+                            collegeName: _collegeNameController.text,
+                            marksOfIdentification:
+                                _marksOfIdentificationController.text,
                           ),
                     ),
                   );
