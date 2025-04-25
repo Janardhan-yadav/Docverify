@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'validation_results_page.dart';
 import 'settings_page.dart';
 import 'login_screen.dart'; // Adjust the import based on your project structure
@@ -33,7 +34,11 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.indigo,
+          ),
         ),
         const SizedBox(height: 5),
         Container(
@@ -43,7 +48,10 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
             border: Border.all(color: Colors.grey),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Text(value, style: const TextStyle(fontSize: 16)),
+          child: Text(
+            value,
+            style: GoogleFonts.poppins(fontSize: 16, color: Colors.black87),
+          ),
         ),
       ],
     );
@@ -60,19 +68,25 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.indigo,
+          ),
         ),
         const SizedBox(height: 5),
         TextFormField(
           controller: controller,
           decoration: InputDecoration(
             hintText: hintText,
+            hintStyle: GoogleFonts.poppins(color: Colors.grey),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 15,
               vertical: 12,
             ),
           ),
+          style: GoogleFonts.poppins(fontSize: 16),
         ),
       ],
     );
@@ -83,20 +97,30 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'CATEGORY',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.indigo,
+          ),
         ),
         const SizedBox(height: 5),
         DropdownButtonFormField<String>(
           value: _selectedCategory,
-          hint: const Text('Select category'),
+          hint: Text(
+            'Select category',
+            style: GoogleFonts.poppins(color: Colors.grey),
+          ),
           items:
               ['GENERAL', 'OBC', 'SC/ST', 'OTHER']
                   .map(
                     (category) => DropdownMenuItem(
                       value: category,
-                      child: Text(category),
+                      child: Text(
+                        category,
+                        style: GoogleFonts.poppins(fontSize: 16),
+                      ),
                     ),
                   )
                   .toList(),
@@ -112,6 +136,7 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
               vertical: 12,
             ),
           ),
+          style: GoogleFonts.poppins(fontSize: 16),
         ),
       ],
     );
@@ -122,9 +147,13 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'UPLOAD DOCUMENT',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.indigo,
+          ),
         ),
         const SizedBox(height: 10),
         Container(
@@ -184,7 +213,10 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
               if (_uploadedFileName != null)
                 Text(
                   _uploadedFileName!,
-                  style: const TextStyle(fontSize: 14, color: Colors.black),
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               const SizedBox(height: 10),
@@ -193,7 +225,10 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
                 children: [
                   Text(
                     'Drag files to upload, or',
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
                   ),
                   const SizedBox(width: 5),
                   ElevatedButton(
@@ -236,9 +271,12 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
                         vertical: 8,
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Choose File',
-                      style: TextStyle(color: Colors.white, fontSize: 14),
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],
@@ -270,16 +308,38 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Verify Hall Ticket'),
-        backgroundColor: Colors.blue,
+        title: Text(
+          'Verify Hall Ticket',
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue, Colors.indigo],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        elevation: 4,
       ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             UserAccountsDrawerHeader(
-              accountName: Text(currentUser?.displayName ?? 'No Name'),
-              accountEmail: Text(currentUser?.email ?? 'No Email'),
+              accountName: Text(
+                currentUser?.displayName ?? 'No Name',
+                style: GoogleFonts.poppins(fontSize: 16),
+              ),
+              accountEmail: Text(
+                currentUser?.email ?? 'No Email',
+                style: GoogleFonts.poppins(fontSize: 14),
+              ),
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
                 child:
@@ -298,10 +358,17 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
                           color: Colors.blue,
                         ),
               ),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blue, Colors.indigo],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
             ),
             ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
+              leading: const Icon(Icons.settings, color: Colors.blue),
+              title: Text('Settings', style: GoogleFonts.poppins(fontSize: 16)),
               onTap: () {
                 Navigator.push(
                   context,
@@ -310,8 +377,8 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Logout'),
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: Text('Logout', style: GoogleFonts.poppins(fontSize: 16)),
               onTap: () async {
                 try {
                   await FirebaseAuth.instance.signOut();
@@ -342,9 +409,13 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Verify Hall Ticket:',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              style: GoogleFonts.poppins(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.indigo,
+              ),
             ),
             const SizedBox(height: 20),
             _buildInfoField(
@@ -396,9 +467,9 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
                     vertical: 15,
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'VERIFY',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+                  style: GoogleFonts.poppins(fontSize: 18, color: Colors.white),
                 ),
               ),
             ),

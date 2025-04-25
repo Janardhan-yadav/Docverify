@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'settings_page.dart';
+import 'login_screen.dart'; // Adjust the import based on your project structure
 
 class ValidationResultsPage extends StatelessWidget {
   final String name;
@@ -24,99 +28,245 @@ class ValidationResultsPage extends StatelessWidget {
     // Simulate validation results
     bool isHallTicketNumberValid = _isValidField(hallTicketNumber);
     bool isRegistrationNumberValid = _isValidField(registrationNumber);
+    final currentUser = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Verification Results'),
-        backgroundColor: Colors.blue,
+        title: Text(
+          'Verification Results',
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue, Colors.indigo],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        elevation: 4,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            UserAccountsDrawerHeader(
+              accountName: Text(currentUser?.displayName ?? 'No Name'),
+              accountEmail: Text(currentUser?.email ?? 'No Email'),
+              currentAccountPicture: CircleAvatar(
+                backgroundColor: Colors.white,
+                child:
+                    currentUser?.photoURL != null
+                        ? ClipOval(
+                          child: Image.network(
+                            currentUser!.photoURL!,
+                            fit: BoxFit.cover,
+                            width: 60,
+                            height: 60,
+                          ),
+                        )
+                        : const Icon(
+                          Icons.person,
+                          size: 40,
+                          color: Colors.blue,
+                        ),
+              ),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blue, Colors.indigo],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings, color: Colors.blue),
+              title: Text('Settings', style: GoogleFonts.poppins(fontSize: 16)),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsPage()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: Text('Logout', style: GoogleFonts.poppins(fontSize: 16)),
+              onTap: () async {
+                try {
+                  await FirebaseAuth.instance.signOut();
+                  print('Logout successful');
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
+                  );
+                } catch (e) {
+                  print('Logout failed: $e');
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Logout failed: $e')));
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Based on the submitted documents, the following columns have been matched:',
-              style: TextStyle(fontSize: 16),
+            Text(
+              'Validation Results of Hall Ticket',
+              style: GoogleFonts.poppins(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.indigo,
+              ),
             ),
-            const SizedBox(height: 20),
-            _buildResultRow('NAME', true),
-            _buildResultRow(
-              "FATHER'S NA...",
-              true,
-            ), // Placeholder for Father's Name
-            _buildResultRow('HALL TICKET', true),
-            _buildResultRow('CATEGORY', true),
-            const SizedBox(height: 30),
-            const Text(
-              'The following columns have discrepancies:',
-              style: TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 20),
-            _buildResultRow('HALL TICKET NUMBER', isHallTicketNumberValid),
-            _buildResultRow('REGISTRATION NUMBER', isRegistrationNumberValid),
-            const Spacer(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                OutlinedButton(
-                  onPressed: () {
-                    Navigator.pop(context); // Go back to the previous screen
-                  },
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.grey),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+            const SizedBox(height: 16),
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Matched Columns',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green,
+                      ),
                     ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 30,
-                      vertical: 15,
-                    ),
-                  ),
-                  child: const Text(
-                    'Reload',
-                    style: TextStyle(fontSize: 16, color: Colors.black),
-                  ),
+                    const SizedBox(height: 12),
+                    _buildResultRow('NAME', true),
+                    _buildResultRow("FATHER'S NAME", true),
+                    _buildResultRow('HALL TICKET', true),
+                    _buildResultRow('CATEGORY', true),
+                  ],
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    // Add logic for the "Next" button (e.g., navigate to another page)
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 30,
-                      vertical: 15,
-                    ),
-                  ),
-                  child: const Text(
-                    'Next',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
-                ),
-              ],
+              ),
             ),
+            const SizedBox(height: 24),
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Discrepancies',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildResultRow(
+                      'HALL TICKET NUMBER',
+                      isHallTicketNumberValid,
+                    ),
+                    _buildResultRow(
+                      'REGISTRATION NUMBER',
+                      isRegistrationNumberValid,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(
+              height: 24,
+            ), // Extra padding to prevent overlap with buttons
           ],
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          color: Colors.white, // Ensure background blends with screen
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              OutlinedButton(
+                onPressed: () {
+                  Navigator.pop(context); // Go back to the previous screen
+                },
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.grey),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 30,
+                    vertical: 15,
+                  ),
+                ),
+                child: Text(
+                  'Reupload',
+                  style: GoogleFonts.poppins(fontSize: 16, color: Colors.black),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  // Add logic for the "Next" button (e.g., navigate to another page)
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 30,
+                    vertical: 15,
+                  ),
+                  elevation: 2,
+                ),
+                child: Text(
+                  'Next',
+                  style: GoogleFonts.poppins(fontSize: 16, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildResultRow(String label, bool isValid) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
           Icon(
-            isValid ? Icons.check : Icons.close,
+            isValid ? Icons.check_circle : Icons.cancel,
             color: isValid ? Colors.green : Colors.red,
-            size: 24,
+            size: 28,
           ),
-          const SizedBox(width: 10),
-          Text(label, style: const TextStyle(fontSize: 16)),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: GoogleFonts.poppins(fontSize: 16, color: Colors.black87),
+          ),
         ],
       ),
     );
