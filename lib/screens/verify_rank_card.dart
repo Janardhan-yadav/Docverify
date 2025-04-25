@@ -2,29 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'validation_results_page.dart';
 import 'settings_page.dart';
-import 'login_screen.dart'; // Adjust the import based on your project structure
-import 'faq_help_screen.dart'; // Add this import for the FAQ screen
+import 'login_screen.dart';
+import 'faq_help_screen.dart';
+import 'validation_results_rankcard.dart'; // Add this import for ValidationResultsRankCardPage
 
-class VerifyHallTicketPage extends StatefulWidget {
-  const VerifyHallTicketPage({super.key});
+class VerifyRankCardPage extends StatefulWidget {
+  const VerifyRankCardPage({super.key});
 
   @override
-  _VerifyHallTicketPageState createState() => _VerifyHallTicketPageState();
+  _VerifyRankCardPageState createState() => _VerifyRankCardPageState();
 }
 
-class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
+class _VerifyRankCardPageState extends State<VerifyRankCardPage> {
+  final _nameController = TextEditingController();
+  final _fatherNameController = TextEditingController();
   final _hallTicketController = TextEditingController();
   final _registrationController = TextEditingController();
+  final _totalMarksController = TextEditingController();
+  final _rankController = TextEditingController();
   String? _selectedCategory;
   String? _uploadedFileName;
   String? _filePath;
 
   @override
   void dispose() {
+    _nameController.dispose();
+    _fatherNameController.dispose();
     _hallTicketController.dispose();
     _registrationController.dispose();
+    _totalMarksController.dispose();
+    _rankController.dispose();
     super.dispose();
   }
 
@@ -241,7 +249,7 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
                         FilePickerResult? result = await FilePicker.platform
                             .pickFiles(
                               type: FileType.custom,
-                              allowedExtensions: ['pdf', 'jpg', "jpeg", 'png'],
+                              allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
                             );
 
                         if (result != null && result.files.isNotEmpty) {
@@ -310,7 +318,7 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Verify Hall Ticket',
+          'Verify Rank Card',
           style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -426,7 +434,7 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Verify Hall Ticket:',
+              'Verify Rank Card:',
               style: GoogleFonts.poppins(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -434,26 +442,35 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
               ),
             ),
             const SizedBox(height: 20),
-            _buildInfoField(
-              'NAME',
-              currentUser?.displayName ?? 'Not available',
-            ),
-            const SizedBox(height: 20),
-            _buildInfoField("FATHER'S NAME", 'Not available'),
+            _buildEditableField('NAME', 'Enter your name', _nameController),
             const SizedBox(height: 20),
             _buildEditableField(
-              'HALLTICKET NUMBER',
-              'Enter your hall ticket number',
+              "FATHER'S NAME",
+              'Enter father\'s name',
+              _fatherNameController,
+            ),
+            const SizedBox(height: 20),
+            _buildEditableField(
+              'HALL TICKET NUMBER',
+              'Enter hall ticket number',
               _hallTicketController,
             ),
             const SizedBox(height: 20),
             _buildEditableField(
               'REGISTRATION NUMBER',
-              'Enter your registration number',
+              'Enter registration number',
               _registrationController,
             ),
             const SizedBox(height: 20),
             _buildCategoryDropdown(),
+            const SizedBox(height: 20),
+            _buildEditableField(
+              'TOTAL MARKS',
+              'Enter total marks',
+              _totalMarksController,
+            ),
+            const SizedBox(height: 20),
+            _buildEditableField('RANK', 'Enter rank', _rankController),
             const SizedBox(height: 20),
             _buildUploadButton(),
             const SizedBox(height: 30),
@@ -464,11 +481,14 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
                     context,
                     MaterialPageRoute(
                       builder:
-                          (context) => ValidationResultsHallTicketPage(
-                            name: currentUser?.displayName ?? 'Not available',
+                          (context) => ValidationResultsRankCardPage(
+                            name: _nameController.text,
+                            fatherName: _fatherNameController.text,
                             hallTicketNumber: _hallTicketController.text,
                             registrationNumber: _registrationController.text,
                             category: _selectedCategory ?? 'GENERAL',
+                            totalMarks: _totalMarksController.text,
+                            rank: _rankController.text,
                           ),
                     ),
                   );

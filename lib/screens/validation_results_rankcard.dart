@@ -2,22 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'settings_page.dart';
-import 'login_screen.dart'; // Adjust the import based on your project structure
-import 'faq_help_screen.dart'; // Add this import for the FAQ screen
-import 'verify_rank_card.dart'; // Add this import for the Rank Card page
+import 'login_screen.dart';
+import 'faq_help_screen.dart';
+import 'verify_rank_card.dart';
+import 'verify_allotment_order.dart'; // Add this import for VerifyAllotmentOrderPage
 
-class ValidationResultsHallTicketPage extends StatelessWidget {
+class ValidationResultsRankCardPage extends StatelessWidget {
   final String name;
+  final String fatherName;
   final String hallTicketNumber;
-  final String registrationNumber;
   final String category;
+  final String totalMarks;
+  final String rank;
+  final String registrationNumber;
 
-  const ValidationResultsHallTicketPage({
+  const ValidationResultsRankCardPage({
     super.key,
     required this.name,
+    required this.fatherName,
     required this.hallTicketNumber,
-    required this.registrationNumber,
     required this.category,
+    required this.totalMarks,
+    required this.rank,
+    required this.registrationNumber,
   });
 
   // Simple validation logic (replace with actual backend validation)
@@ -27,8 +34,13 @@ class ValidationResultsHallTicketPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Simulate validation results
-    bool isHallTicketNumberValid = _isValidField(hallTicketNumber);
+    // Simulate validation results based on the updated image
+    bool isNameValid = _isValidField(name);
+    bool isFatherNameValid = _isValidField(fatherName);
+    bool isHallTicketValid = _isValidField(hallTicketNumber);
+    bool isCategoryValid = _isValidField(category);
+    bool isTotalMarksValid = _isValidField(totalMarks);
+    bool isRankValid = _isValidField(rank);
     bool isRegistrationNumberValid = _isValidField(registrationNumber);
     final currentUser = FirebaseAuth.instance.currentUser;
 
@@ -147,7 +159,7 @@ class ValidationResultsHallTicketPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Validation Results of Hall Ticket',
+              'Validation Results of Rank Card',
               style: GoogleFonts.poppins(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -174,10 +186,7 @@ class ValidationResultsHallTicketPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildResultRow('NAME', true),
-                    _buildResultRow("FATHER'S NAME", true),
-                    _buildResultRow('HALL TICKET', true),
-                    _buildResultRow('CATEGORY', true),
+                    _buildResultRow('CATEGORY', isCategoryValid),
                   ],
                 ),
               ),
@@ -202,10 +211,11 @@ class ValidationResultsHallTicketPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildResultRow(
-                      'HALL TICKET NUMBER',
-                      isHallTicketNumberValid,
-                    ),
+                    _buildResultRow('NAME', isNameValid),
+                    _buildResultRow("FATHER'S NAME", isFatherNameValid),
+                    _buildResultRow('HALL TICKET', isHallTicketValid),
+                    _buildResultRow('TOTAL MARKS', isTotalMarksValid),
+                    _buildResultRow('RANK', isRankValid),
                     _buildResultRow(
                       'REGISTRATION NUMBER',
                       isRegistrationNumberValid,
@@ -251,7 +261,7 @@ class ValidationResultsHallTicketPage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const VerifyRankCardPage(),
+                      builder: (context) => const VerifyAllotmentOrderPage(),
                     ),
                   );
                 },

@@ -2,22 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'settings_page.dart';
-import 'login_screen.dart'; // Adjust the import based on your project structure
-import 'faq_help_screen.dart'; // Add this import for the FAQ screen
-import 'verify_rank_card.dart'; // Add this import for the Rank Card page
+import 'login_screen.dart';
+import 'faq_help_screen.dart';
+import 'verify_joining_report.dart';
 
-class ValidationResultsHallTicketPage extends StatelessWidget {
+class ValidationResultsJoiningReportPage extends StatelessWidget {
   final String name;
+  final String fatherName;
   final String hallTicketNumber;
-  final String registrationNumber;
-  final String category;
+  final String admissionNumber;
 
-  const ValidationResultsHallTicketPage({
+  const ValidationResultsJoiningReportPage({
     super.key,
     required this.name,
+    required this.fatherName,
     required this.hallTicketNumber,
-    required this.registrationNumber,
-    required this.category,
+    required this.admissionNumber,
   });
 
   // Simple validation logic (replace with actual backend validation)
@@ -27,9 +27,11 @@ class ValidationResultsHallTicketPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Simulate validation results
-    bool isHallTicketNumberValid = _isValidField(hallTicketNumber);
-    bool isRegistrationNumberValid = _isValidField(registrationNumber);
+    // Simulate validation results (HALL TICKET NUMBER is valid, others are invalid for demo)
+    bool isNameValid = _isValidField(name);
+    bool isFatherNameValid = _isValidField(fatherName);
+    bool isHallTicketValid = _isValidField(hallTicketNumber);
+    bool isAdmissionNumberValid = _isValidField(admissionNumber);
     final currentUser = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
@@ -147,7 +149,7 @@ class ValidationResultsHallTicketPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Validation Results of Hall Ticket',
+              'Validation Results of Joining Report',
               style: GoogleFonts.poppins(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -174,10 +176,7 @@ class ValidationResultsHallTicketPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildResultRow('NAME', true),
-                    _buildResultRow("FATHER'S NAME", true),
-                    _buildResultRow('HALL TICKET', true),
-                    _buildResultRow('CATEGORY', true),
+                    _buildResultRow('HALL TICKET NUMBER', isHallTicketValid),
                   ],
                 ),
               ),
@@ -202,14 +201,9 @@ class ValidationResultsHallTicketPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildResultRow(
-                      'HALL TICKET NUMBER',
-                      isHallTicketNumberValid,
-                    ),
-                    _buildResultRow(
-                      'REGISTRATION NUMBER',
-                      isRegistrationNumberValid,
-                    ),
+                    _buildResultRow('NAME', isNameValid),
+                    _buildResultRow("FATHER'S NAME", isFatherNameValid),
+                    _buildResultRow('ADMISSION NUMBER', isAdmissionNumberValid),
                   ],
                 ),
               ),
@@ -223,7 +217,7 @@ class ValidationResultsHallTicketPage extends StatelessWidget {
       bottomNavigationBar: SafeArea(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-          color: Colors.white, // Ensure background blends with screen
+          color: Colors.white,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -248,12 +242,7 @@ class ValidationResultsHallTicketPage extends StatelessWidget {
               ),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const VerifyRankCardPage(),
-                    ),
-                  );
+                  // Add logic for the "Next" button (e.g., navigate to another page)
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,

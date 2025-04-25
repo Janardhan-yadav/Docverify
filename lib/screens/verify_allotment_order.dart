@@ -2,60 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'validation_results_page.dart';
 import 'settings_page.dart';
-import 'login_screen.dart'; // Adjust the import based on your project structure
-import 'faq_help_screen.dart'; // Add this import for the FAQ screen
+import 'login_screen.dart';
+import 'faq_help_screen.dart';
+import 'validation_results_allotment.dart'; // Add this import for ValidationResultsAllotmentPage
 
-class VerifyHallTicketPage extends StatefulWidget {
-  const VerifyHallTicketPage({super.key});
+class VerifyAllotmentOrderPage extends StatefulWidget {
+  const VerifyAllotmentOrderPage({super.key});
 
   @override
-  _VerifyHallTicketPageState createState() => _VerifyHallTicketPageState();
+  _VerifyAllotmentOrderPageState createState() =>
+      _VerifyAllotmentOrderPageState();
 }
 
-class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
+class _VerifyAllotmentOrderPageState extends State<VerifyAllotmentOrderPage> {
+  final _nameController = TextEditingController();
+  final _fatherNameController = TextEditingController();
   final _hallTicketController = TextEditingController();
   final _registrationController = TextEditingController();
+  final _branchController = TextEditingController();
+  final _feesController = TextEditingController();
   String? _selectedCategory;
   String? _uploadedFileName;
   String? _filePath;
 
   @override
   void dispose() {
+    _nameController.dispose();
+    _fatherNameController.dispose();
     _hallTicketController.dispose();
     _registrationController.dispose();
+    _branchController.dispose();
+    _feesController.dispose();
     super.dispose();
-  }
-
-  // Build non-editable info field
-  Widget _buildInfoField(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.indigo,
-          ),
-        ),
-        const SizedBox(height: 5),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            value,
-            style: GoogleFonts.poppins(fontSize: 16, color: Colors.black87),
-          ),
-        ),
-      ],
-    );
   }
 
   // Build editable input field
@@ -143,7 +122,7 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
     );
   }
 
-  // Build upload button with updated UI
+  // Build upload button
   Widget _buildUploadButton() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,7 +220,7 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
                         FilePickerResult? result = await FilePicker.platform
                             .pickFiles(
                               type: FileType.custom,
-                              allowedExtensions: ['pdf', 'jpg', "jpeg", 'png'],
+                              allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
                             );
 
                         if (result != null && result.files.isNotEmpty) {
@@ -310,7 +289,7 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Verify Hall Ticket',
+          'Verify Allotment Order',
           style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -426,7 +405,7 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Verify Hall Ticket:',
+              'Verify Allotment Order:',
               style: GoogleFonts.poppins(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -434,26 +413,31 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
               ),
             ),
             const SizedBox(height: 20),
-            _buildInfoField(
-              'NAME',
-              currentUser?.displayName ?? 'Not available',
-            ),
-            const SizedBox(height: 20),
-            _buildInfoField("FATHER'S NAME", 'Not available'),
+            _buildEditableField('NAME', 'Enter your name', _nameController),
             const SizedBox(height: 20),
             _buildEditableField(
-              'HALLTICKET NUMBER',
-              'Enter your hall ticket number',
+              "FATHER'S NAME",
+              'Enter father\'s name',
+              _fatherNameController,
+            ),
+            const SizedBox(height: 20),
+            _buildEditableField(
+              'HALL TICKET NUMBER',
+              'Enter hall ticket number',
               _hallTicketController,
             ),
             const SizedBox(height: 20),
             _buildEditableField(
               'REGISTRATION NUMBER',
-              'Enter your registration number',
+              'Enter registration number',
               _registrationController,
             ),
             const SizedBox(height: 20),
             _buildCategoryDropdown(),
+            const SizedBox(height: 20),
+            _buildEditableField('BRANCH', 'Enter branch', _branchController),
+            const SizedBox(height: 20),
+            _buildEditableField('FEES', 'Enter fees', _feesController),
             const SizedBox(height: 20),
             _buildUploadButton(),
             const SizedBox(height: 30),
@@ -464,11 +448,14 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
                     context,
                     MaterialPageRoute(
                       builder:
-                          (context) => ValidationResultsHallTicketPage(
-                            name: currentUser?.displayName ?? 'Not available',
+                          (context) => ValidationResultsAllotmentPage(
+                            name: _nameController.text,
+                            fatherName: _fatherNameController.text,
                             hallTicketNumber: _hallTicketController.text,
                             registrationNumber: _registrationController.text,
                             category: _selectedCategory ?? 'GENERAL',
+                            branch: _branchController.text,
+                            fees: _feesController.text,
                           ),
                     ),
                   );
