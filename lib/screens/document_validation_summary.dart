@@ -4,8 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'settings_page.dart';
 import 'login_screen.dart';
 import 'faq_help_screen.dart';
-import 'verify_income_certificate.dart'; // For Income Certificate
-import 'verify_transfer_certificate.dart'; // Assuming this exists for Transfer Certificate
+import 'verify_income_certificate.dart';
+import 'verify_transfer_certificate.dart';
 
 class DocumentValidationSummaryPage extends StatelessWidget {
   const DocumentValidationSummaryPage({super.key});
@@ -186,10 +186,10 @@ class DocumentValidationSummaryPage extends StatelessWidget {
             const SizedBox(height: 24),
             Center(
               child: Image.asset(
-                'assets/document_verification.png', // Replace with your asset path
-                height: 250, // Increased height to match the screenshot
-                width: 250, // Increased width to match the screenshot
-                fit: BoxFit.contain, // Ensure the image scales properly
+                'assets/document_verification.png',
+                height: 250,
+                width: 250,
+                fit: BoxFit.contain,
               ),
             ),
           ],
@@ -232,17 +232,27 @@ class DocumentValidationSummaryPage extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(
-              isVerified ? Icons.check_circle : Icons.cancel,
-              color: isVerified ? Colors.green : Colors.red,
-              size: 24,
+            Row(
+              children: [
+                Icon(
+                  isVerified ? Icons.check_circle : Icons.cancel,
+                  color: isVerified ? Colors.green : Colors.red,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: GoogleFonts.poppins(fontSize: 16, color: Colors.black87),
-            ),
+            if (onTap != null)
+              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
           ],
         ),
       ),

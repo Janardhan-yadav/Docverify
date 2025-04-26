@@ -1,25 +1,57 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import 'validation_results_page.dart';
 import 'settings_page.dart';
-import 'login_screen.dart'; // Adjust the import based on your project structure
-import 'faq_help_screen.dart'; // Add this import for the FAQ screen
+import 'login_screen.dart';
+import 'faq_help_screen.dart'; // Add this if missing
 
 class VerifyHallTicketPage extends StatefulWidget {
   const VerifyHallTicketPage({super.key});
 
   @override
-  _VerifyHallTicketPageState createState() => _VerifyHallTicketPageState();
+  State<VerifyHallTicketPage> createState() => _VerifyHallTicketPageState();
 }
 
 class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
-  final _hallTicketController = TextEditingController();
-  final _registrationController = TextEditingController();
+  final TextEditingController _hallTicketController = TextEditingController();
+  final TextEditingController _registrationController = TextEditingController();
   String? _selectedCategory;
   String? _uploadedFileName;
   String? _filePath;
+  String _userName = 'Not available';
+  String _fatherName = 'Not available';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserDetails();
+  }
+
+  Future<void> _fetchUserDetails() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      try {
+        DocumentSnapshot userDoc =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(currentUser.uid)
+                .get();
+
+        if (userDoc.exists) {
+          setState(() {
+            _userName = userDoc.get('name') ?? 'Not available';
+            _fatherName = userDoc.get('fatherName') ?? 'Not available';
+          });
+        }
+      } catch (e) {
+        debugPrint("Error fetching user details: $e");
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -28,37 +60,22 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
     super.dispose();
   }
 
-  // Build non-editable info field
   Widget _buildInfoField(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.indigo,
-          ),
-        ),
+        Text(label, style: _labelStyle()),
         const SizedBox(height: 5),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            value,
-            style: GoogleFonts.poppins(fontSize: 16, color: Colors.black87),
-          ),
+          decoration: _inputDecoration(),
+          child: Text(value, style: _inputTextStyle()),
         ),
       ],
     );
   }
 
-  // Build editable input field
   Widget _buildEditableField(
     String label,
     String hintText,
@@ -67,14 +84,7 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.indigo,
-          ),
-        ),
+        Text(label, style: _labelStyle()),
         const SizedBox(height: 5),
         TextFormField(
           controller: controller,
@@ -87,25 +97,17 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
               vertical: 12,
             ),
           ),
-          style: GoogleFonts.poppins(fontSize: 16),
+          style: _inputTextStyle(),
         ),
       ],
     );
   }
 
-  // Build category dropdown
   Widget _buildCategoryDropdown() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'CATEGORY',
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.indigo,
-          ),
-        ),
+        Text('CATEGORY', style: _labelStyle()),
         const SizedBox(height: 5),
         DropdownButtonFormField<String>(
           value: _selectedCategory,
@@ -114,22 +116,13 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
             style: GoogleFonts.poppins(color: Colors.grey),
           ),
           items:
-              ['GENERAL', 'OBC', 'SC/ST', 'OTHER']
-                  .map(
-                    (category) => DropdownMenuItem(
-                      value: category,
-                      child: Text(
-                        category,
-                        style: GoogleFonts.poppins(fontSize: 16),
-                      ),
-                    ),
-                  )
-                  .toList(),
-          onChanged: (value) {
-            setState(() {
-              _selectedCategory = value;
-            });
-          },
+              ['GENERAL', 'OBC', 'SC/ST', 'OTHER'].map((category) {
+                return DropdownMenuItem(
+                  value: category,
+                  child: Text(category, style: _inputTextStyle()),
+                );
+              }).toList(),
+          onChanged: (value) => setState(() => _selectedCategory = value),
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             contentPadding: const EdgeInsets.symmetric(
@@ -137,131 +130,56 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
               vertical: 12,
             ),
           ),
-          style: GoogleFonts.poppins(fontSize: 16),
         ),
       ],
     );
   }
 
-  // Build upload button with updated UI
   Widget _buildUploadButton() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'UPLOAD DOCUMENT',
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.indigo,
-          ),
-        ),
+        Text('UPLOAD DOCUMENT', style: _labelStyle()),
         const SizedBox(height: 10),
         Container(
           padding: const EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(10),
-          ),
+          decoration: _inputDecoration(),
           child: Column(
             children: [
               Stack(
                 alignment: Alignment.center,
                 children: [
-                  SizedBox(
-                    width: 100,
-                    height: 100,
-                    child: CircularProgressIndicator(
-                      value: _uploadedFileName != null ? 1.0 : 0,
-                      strokeWidth: 8,
-                      backgroundColor: Colors.grey[300],
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Colors.blue,
-                      ),
+                  CircularProgressIndicator(
+                    value: _uploadedFileName != null ? 1.0 : 0,
+                    strokeWidth: 8,
+                    backgroundColor: Colors.grey[300],
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Colors.blue,
                     ),
                   ),
-                  if (_uploadedFileName != null)
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        const Icon(
-                          Icons.description,
-                          size: 40,
-                          color: Colors.blue,
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.green,
-                            ),
-                            child: const Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  else
-                    const Icon(Icons.description, size: 40, color: Colors.grey),
+                  Icon(
+                    Icons.description,
+                    size: 40,
+                    color:
+                        _uploadedFileName != null ? Colors.blue : Colors.grey,
+                  ),
                 ],
               ),
               const SizedBox(height: 10),
               if (_uploadedFileName != null)
                 Text(
                   _uploadedFileName!,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
+                  style: _inputTextStyle(),
                   textAlign: TextAlign.center,
                 ),
               const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    'Drag files to upload, or',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
-                  ),
+                  Text('Drag files to upload, or', style: _hintTextStyle()),
                   const SizedBox(width: 5),
                   ElevatedButton(
-                    onPressed: () async {
-                      await FilePicker.platform.clearTemporaryFiles();
-                      print('Cleared temporary files');
-
-                      try {
-                        FilePickerResult? result = await FilePicker.platform
-                            .pickFiles(
-                              type: FileType.custom,
-                              allowedExtensions: ['pdf', 'jpg', "jpeg", 'png'],
-                            );
-
-                        if (result != null && result.files.isNotEmpty) {
-                          setState(() {
-                            _uploadedFileName = result.files.first.name;
-                            _filePath = result.files.first.path;
-                            print(
-                              'File selected: $_uploadedFileName, Path: $_filePath',
-                            );
-                          });
-                        } else {
-                          print('No file selected');
-                        }
-                      } catch (e) {
-                        print('Error picking file: $e');
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error picking file: $e')),
-                        );
-                      }
-                    },
+                    onPressed: _pickFile,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       shape: RoundedRectangleBorder(
@@ -274,10 +192,7 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
                     ),
                     child: Text(
                       'Choose File',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.white,
-                      ),
+                      style: GoogleFonts.poppins(color: Colors.white),
                     ),
                   ),
                 ],
@@ -287,13 +202,11 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
                   alignment: Alignment.centerRight,
                   child: IconButton(
                     icon: const Icon(Icons.clear, color: Colors.red),
-                    onPressed: () {
-                      setState(() {
-                        _uploadedFileName = null;
-                        _filePath = null;
-                        print('File selection cleared');
-                      });
-                    },
+                    onPressed:
+                        () => setState(() {
+                          _uploadedFileName = null;
+                          _filePath = null;
+                        }),
                   ),
                 ),
             ],
@@ -303,6 +216,40 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
     );
   }
 
+  Future<void> _pickFile() async {
+    await FilePicker.platform.clearTemporaryFiles();
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      );
+      if (result != null && result.files.isNotEmpty) {
+        setState(() {
+          _uploadedFileName = result.files.first.name;
+          _filePath = result.files.first.path;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error picking file: $e')));
+    }
+  }
+
+  TextStyle _labelStyle() => GoogleFonts.poppins(
+    fontSize: 16,
+    fontWeight: FontWeight.bold,
+    color: Colors.indigo,
+  );
+  TextStyle _inputTextStyle() =>
+      GoogleFonts.poppins(fontSize: 16, color: Colors.black87);
+  TextStyle _hintTextStyle() =>
+      GoogleFonts.poppins(fontSize: 14, color: Colors.grey);
+  BoxDecoration _inputDecoration() => BoxDecoration(
+    border: Border.all(color: Colors.grey),
+    borderRadius: BorderRadius.circular(10),
+  );
+
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
@@ -311,11 +258,7 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
       appBar: AppBar(
         title: Text(
           'Verify Hall Ticket',
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
+          style: GoogleFonts.poppins(fontSize: 20, color: Colors.white),
         ),
         flexibleSpace: Container(
           decoration: const BoxDecoration(
@@ -326,112 +269,17 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
             ),
           ),
         ),
-        elevation: 4,
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            UserAccountsDrawerHeader(
-              accountName: Text(
-                currentUser?.displayName ?? 'No Name',
-                style: GoogleFonts.poppins(fontSize: 16),
-              ),
-              accountEmail: Text(
-                currentUser?.email ?? 'No Email',
-                style: GoogleFonts.poppins(fontSize: 14),
-              ),
-              currentAccountPicture: CircleAvatar(
-                backgroundColor: Colors.white,
-                child:
-                    currentUser?.photoURL != null
-                        ? ClipOval(
-                          child: Image.network(
-                            currentUser!.photoURL!,
-                            fit: BoxFit.cover,
-                            width: 60,
-                            height: 60,
-                          ),
-                        )
-                        : const Icon(
-                          Icons.person,
-                          size: 40,
-                          color: Colors.blue,
-                        ),
-              ),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blue, Colors.indigo],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings, color: Colors.blue),
-              title: Text('Settings', style: GoogleFonts.poppins(fontSize: 16)),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SettingsPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.help, color: Colors.blue),
-              title: Text(
-                'Help & FAQ',
-                style: GoogleFonts.poppins(fontSize: 16),
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const FAQHelpScreen(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: Text('Logout', style: GoogleFonts.poppins(fontSize: 16)),
-              onTap: () async {
-                try {
-                  await FirebaseAuth.instance.signOut();
-                  print('Logout successful');
-                  if (mounted) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  print('Logout failed: $e');
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Logout failed: $e')),
-                    );
-                  }
-                }
-              },
-            ),
-          ],
-        ),
-      ),
+      drawer: _buildDrawer(currentUser),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 20),
-            _buildInfoField(
-              'NAME',
-              currentUser?.displayName ?? 'Not available',
-            ),
+            _buildInfoField('NAME', _userName),
             const SizedBox(height: 20),
-            _buildInfoField("FATHER'S NAME", 'Not available'),
+            _buildInfoField("FATHER'S NAME", _fatherName),
             const SizedBox(height: 20),
             _buildEditableField(
               'HALLTICKET NUMBER',
@@ -457,7 +305,7 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
                     MaterialPageRoute(
                       builder:
                           (context) => ValidationResultsHallTicketPage(
-                            name: currentUser?.displayName ?? 'Not available',
+                            name: _userName,
                             hallTicketNumber: _hallTicketController.text,
                             registrationNumber: _registrationController.text,
                             category: _selectedCategory ?? 'GENERAL',
@@ -483,6 +331,78 @@ class _VerifyHallTicketPageState extends State<VerifyHallTicketPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Drawer _buildDrawer(User? currentUser) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          UserAccountsDrawerHeader(
+            accountName: Text(
+              _userName,
+              style: GoogleFonts.poppins(fontSize: 16),
+            ),
+            accountEmail: Text(
+              currentUser?.email ?? 'No Email',
+              style: GoogleFonts.poppins(fontSize: 14),
+            ),
+            currentAccountPicture: CircleAvatar(
+              backgroundColor: Colors.white,
+              child:
+                  currentUser?.photoURL != null
+                      ? ClipOval(
+                        child: Image.network(
+                          currentUser!.photoURL!,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                      : const Icon(Icons.person, size: 40, color: Colors.blue),
+            ),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue, Colors.indigo],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.settings, color: Colors.blue),
+            title: Text('Settings', style: GoogleFonts.poppins(fontSize: 16)),
+            onTap:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsPage()),
+                ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.help, color: Colors.blue),
+            title: Text('Help & FAQ', style: GoogleFonts.poppins(fontSize: 16)),
+            onTap:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FAQHelpScreen(),
+                  ),
+                ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: Text('Logout', style: GoogleFonts.poppins(fontSize: 16)),
+            onTap: () async {
+              await FirebaseAuth.instance.signOut();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
