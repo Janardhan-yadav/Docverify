@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'login_screen.dart';
-import 'faq_help_screen.dart'; // Import FAQHelpScreen
+import 'faq_help_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -17,7 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _reenterPasswordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  bool _obscureText = true; // State to toggle password visibility
+  bool _obscureText = true;
 
   Future<void> _register() async {
     if (_passwordController.text.trim() !=
@@ -29,6 +31,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     try {
+      var response = await http.post(
+        Uri.parse('http://localhost:8000/api/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': _emailController.text.trim(),
+          'password': _passwordController.text.trim(),
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Registration failed: ${response.body}');
+      }
+
       final userCred = await _auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
@@ -40,11 +55,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
 
       await userCred.user!.sendEmailVerification();
-
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Verification email sent!')));
-
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -58,6 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Unchanged UI (from your original file)
     return Scaffold(
       backgroundColor: Colors.blue[700],
       body: Center(
@@ -222,21 +236,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
               MaterialPageRoute(builder: (context) => const FAQHelpScreen()),
             );
           },
-          backgroundColor: Colors.white, // White circular background
+          backgroundColor: Colors.white,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 Icons.question_mark,
-                color: const Color(0xFF003087), // Blue question mark
+                color: const Color(0xFF003087),
                 size: 24,
               ),
               Text(
                 'Help',
-                style: TextStyle(
-                  color: const Color(0xFF003087), // Blue text
-                  fontSize: 10, // Smaller font to fit within the circle
-                ),
+                style: TextStyle(color: const Color(0xFF003087), fontSize: 10),
               ),
             ],
           ),

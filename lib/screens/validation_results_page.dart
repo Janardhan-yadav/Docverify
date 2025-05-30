@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'settings_page.dart';
-import 'login_screen.dart'; // Adjust the import based on your project structure
-import 'faq_help_screen.dart'; // Add this import for the FAQ screen
-import 'verify_rank_card.dart'; // Add this import for the Rank Card page
+import '../screens/settings_page.dart';
+import '../screens/login_screen.dart';
+import '../screens/faq_help_screen.dart';
+import '../screens/verify_rank_card.dart';
+import '../models/validation_response.dart';
 
 class ValidationResultsHallTicketPage extends StatelessWidget {
   final String name;
   final String hallTicketNumber;
   final String registrationNumber;
   final String category;
+  final ValidationResponse validationResponse;
 
   const ValidationResultsHallTicketPage({
     super.key,
@@ -18,18 +20,15 @@ class ValidationResultsHallTicketPage extends StatelessWidget {
     required this.hallTicketNumber,
     required this.registrationNumber,
     required this.category,
+    required this.validationResponse,
   });
-
-  // Simple validation logic (replace with actual backend validation)
-  bool _isValidField(String field) {
-    return field.isNotEmpty && field.length >= 3; // Example validation rule
-  }
 
   @override
   Widget build(BuildContext context) {
-    // Simulate validation results
-    bool isHallTicketNumberValid = _isValidField(hallTicketNumber);
-    bool isRegistrationNumberValid = _isValidField(registrationNumber);
+    bool isValid = validationResponse.status == 'Validation Successful';
+    Map<String, ValidationResult> mismatches =
+        validationResponse.validationResult;
+
     final currentUser = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
@@ -123,7 +122,6 @@ class ValidationResultsHallTicketPage extends StatelessWidget {
               onTap: () async {
                 try {
                   await FirebaseAuth.instance.signOut();
-                  print('Logout successful');
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
@@ -131,7 +129,6 @@ class ValidationResultsHallTicketPage extends StatelessWidget {
                     ),
                   );
                 } catch (e) {
-                  print('Logout failed: $e');
                   ScaffoldMessenger.of(
                     context,
                   ).showSnackBar(SnackBar(content: Text('Logout failed: $e')));
@@ -166,18 +163,15 @@ class ValidationResultsHallTicketPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Matched Columns',
+                      'Validation Status',
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Colors.green,
+                        color: isValid ? Colors.green : Colors.red,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildResultRow('NAME', true),
-                    _buildResultRow("FATHER'S NAME", true),
-                    _buildResultRow('HALL TICKET', true),
-                    _buildResultRow('CATEGORY', true),
+                    _buildResultRow('Overall Result', isValid),
                   ],
                 ),
               ),
@@ -194,42 +188,36 @@ class ValidationResultsHallTicketPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Discrepancies',
+                      'Details',
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Colors.red,
+                        color: Colors.indigo,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildResultRow(
-                      'HALL TICKET NUMBER',
-                      isHallTicketNumberValid,
-                    ),
-                    _buildResultRow(
-                      'REGISTRATION NUMBER',
-                      isRegistrationNumberValid,
+                    ...mismatches.entries.map(
+                      (entry) =>
+                          _buildDetailRow(entry.key, entry.value.isValid),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(
-              height: 24,
-            ), // Extra padding to prevent overlap with buttons
+            const SizedBox(height: 24),
           ],
         ),
       ),
       bottomNavigationBar: SafeArea(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-          color: Colors.white, // Ensure background blends with screen
+          color: Colors.white,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               OutlinedButton(
                 onPressed: () {
-                  Navigator.pop(context); // Go back to the previous screen
+                  Navigator.pop(context);
                 },
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.grey),
@@ -294,6 +282,32 @@ class ValidationResultsHallTicketPage extends StatelessWidget {
           Text(
             label,
             style: GoogleFonts.poppins(fontSize: 16, color: Colors.black87),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String field, bool isValid) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Icon(
+            isValid ? Icons.check_circle : Icons.cancel,
+            color: isValid ? Colors.green : Colors.red,
+            size: 28,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            field.toUpperCase(),
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
           ),
         ],
       ),

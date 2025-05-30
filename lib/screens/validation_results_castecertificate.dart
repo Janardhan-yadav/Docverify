@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'settings_page.dart';
-import 'login_screen.dart';
-import 'faq_help_screen.dart';
-import 'verify_caste_certificate.dart';
-import 'verify_income_certificate.dart'; // Import for navigation
+import '../screens/settings_page.dart';
+import '../screens/login_screen.dart';
+import '../screens/faq_help_screen.dart';
+import '../screens/verify_income_certificate.dart'; // Import for navigation
+import '../models/validation_response.dart'; // Import for validation response
 
 class ValidationResultsCasteCertificatePage extends StatelessWidget {
   final String name;
   final String fatherName;
   final String applicationNumber;
   final String caste;
+  final ValidationResponse validationResponse;
 
   const ValidationResultsCasteCertificatePage({
     super.key,
@@ -19,23 +20,15 @@ class ValidationResultsCasteCertificatePage extends StatelessWidget {
     required this.fatherName,
     required this.applicationNumber,
     required this.caste,
+    required this.validationResponse,
   });
-
-  // Simple validation logic (replace with actual backend validation)
-  bool _isValidField(String field) {
-    return field.isNotEmpty &&
-        field.length >= 3 &&
-        field !=
-            'Select'; // Example validation rule, excluding 'Select' for caste
-  }
 
   @override
   Widget build(BuildContext context) {
-    // Simulate validation results (APPLICATION NUMBER is valid, others are invalid for demo)
-    bool isNameValid = _isValidField(name);
-    bool isFatherNameValid = _isValidField(fatherName);
-    bool isApplicationNumberValid = _isValidField(applicationNumber);
-    bool isCasteValid = _isValidField(caste);
+    bool isValid = validationResponse.status == 'Validation Successful';
+    Map<String, ValidationResult> mismatches =
+        validationResponse.validationResult;
+
     final currentUser = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
@@ -172,19 +165,15 @@ class ValidationResultsCasteCertificatePage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Matched Columns',
+                      'Validation Status',
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Colors.green,
+                        color: isValid ? Colors.green : Colors.red,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    if (isApplicationNumberValid)
-                      _buildResultRow(
-                        'APPLICATION NUMBER',
-                        isApplicationNumberValid,
-                      ),
+                    _buildResultRow('Overall Result', isValid),
                   ],
                 ),
               ),
@@ -201,30 +190,23 @@ class ValidationResultsCasteCertificatePage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Discrepancies',
+                      'Details',
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Colors.red,
+                        color: Colors.indigo,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    if (!isNameValid) _buildResultRow('NAME', isNameValid),
-                    if (!isFatherNameValid)
-                      _buildResultRow("FATHER'S NAME", isFatherNameValid),
-                    if (!isApplicationNumberValid)
-                      _buildResultRow(
-                        'APPLICATION NUMBER',
-                        isApplicationNumberValid,
-                      ),
-                    if (!isCasteValid) _buildResultRow('CASTE', isCasteValid),
+                    ...mismatches.entries.map(
+                      (entry) =>
+                          _buildDetailRow(entry.key, entry.value.isValid),
+                    ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(
-              height: 24,
-            ), // Extra padding to prevent overlap with buttons
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -237,7 +219,7 @@ class ValidationResultsCasteCertificatePage extends StatelessWidget {
             children: [
               OutlinedButton(
                 onPressed: () {
-                  Navigator.pop(context); // Go back to the previous screen
+                  Navigator.pop(context);
                 },
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.grey),
@@ -255,14 +237,19 @@ class ValidationResultsCasteCertificatePage extends StatelessWidget {
                 ),
               ),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const VerifyIncomeCertificatePage(),
-                    ),
-                  );
-                },
+                onPressed:
+                    isValid
+                        ? () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      const VerifyIncomeCertificatePage(),
+                            ),
+                          );
+                        }
+                        : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   shape: RoundedRectangleBorder(
@@ -302,6 +289,32 @@ class ValidationResultsCasteCertificatePage extends StatelessWidget {
           Text(
             label,
             style: GoogleFonts.poppins(fontSize: 16, color: Colors.black87),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String field, bool isValid) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Icon(
+            isValid ? Icons.check_circle : Icons.cancel,
+            color: isValid ? Colors.green : Colors.red,
+            size: 28,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            field.toUpperCase(),
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
           ),
         ],
       ),

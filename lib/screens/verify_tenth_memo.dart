@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'settings_page.dart';
-import 'login_screen.dart';
-import 'faq_help_screen.dart';
-import 'validation_results_tenthmemo.dart'; // Import for navigation
+import '../screens/settings_page.dart';
+import '../screens/login_screen.dart';
+import '../screens/faq_help_screen.dart';
+import '../screens/validation_results_tenthmemo.dart';
+import '../services/api_service.dart';
+import 'dart:io';
 
 class VerifyTenthMemoPage extends StatefulWidget {
   const VerifyTenthMemoPage({super.key});
@@ -15,13 +17,15 @@ class VerifyTenthMemoPage extends StatefulWidget {
 }
 
 class _VerifyTenthMemoPageState extends State<VerifyTenthMemoPage> {
+  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _fatherNameController = TextEditingController();
   final _rollNumberController = TextEditingController();
   final _schoolNameController = TextEditingController();
   final _gpaController = TextEditingController();
   String? _uploadedFileName;
-  String? _filePath;
+  File? _selectedFile;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -63,6 +67,12 @@ class _VerifyTenthMemoPageState extends State<VerifyTenthMemoPage> {
             ),
           ),
           style: GoogleFonts.poppins(fontSize: 16),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'This field is required';
+            }
+            return null;
+          },
         ),
       ],
     );
@@ -158,35 +168,7 @@ class _VerifyTenthMemoPageState extends State<VerifyTenthMemoPage> {
                   ),
                   const SizedBox(width: 5),
                   ElevatedButton(
-                    onPressed: () async {
-                      await FilePicker.platform.clearTemporaryFiles();
-                      print('Cleared temporary files');
-
-                      try {
-                        FilePickerResult? result = await FilePicker.platform
-                            .pickFiles(
-                              type: FileType.custom,
-                              allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-                            );
-
-                        if (result != null && result.files.isNotEmpty) {
-                          setState(() {
-                            _uploadedFileName = result.files.first.name;
-                            _filePath = result.files.first.path;
-                            print(
-                              'File selected: $_uploadedFileName, Path: $_filePath',
-                            );
-                          });
-                        } else {
-                          print('No file selected');
-                        }
-                      } catch (e) {
-                        print('Error picking file: $e');
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error picking file: $e')),
-                        );
-                      }
-                    },
+                    onPressed: _isLoading ? null : _pickFile,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       shape: RoundedRectangleBorder(
@@ -212,13 +194,15 @@ class _VerifyTenthMemoPageState extends State<VerifyTenthMemoPage> {
                   alignment: Alignment.centerRight,
                   child: IconButton(
                     icon: const Icon(Icons.clear, color: Colors.red),
-                    onPressed: () {
-                      setState(() {
-                        _uploadedFileName = null;
-                        _filePath = null;
-                        print('File selection cleared');
-                      });
-                    },
+                    onPressed:
+                        _isLoading
+                            ? null
+                            : () {
+                              setState(() {
+                                _uploadedFileName = null;
+                                _selectedFile = null;
+                              });
+                            },
                   ),
                 ),
             ],
@@ -226,6 +210,97 @@ class _VerifyTenthMemoPageState extends State<VerifyTenthMemoPage> {
         ),
       ],
     );
+  }
+
+  Future<void> _pickFile() async {
+    await FilePicker.platform.clearTemporaryFiles();
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        setState(() {
+          _uploadedFileName = result.files.first.name;
+          _selectedFile = File(result.files.first.path!);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error picking file: $e')));
+    }
+  }
+
+  Future<void> _validateDocument() async {
+    if (!_formKey.currentState!.validate() || _selectedFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _selectedFile == null
+                ? 'Please upload a document'
+                : 'Please fill all fields',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      final formData = {
+        'name': _nameController.text,
+        'father_name': _fatherNameController.text,
+        'roll_no': _rollNumberController.text,
+        'school_name': _schoolNameController.text,
+        'gpa': _gpaController.text,
+      };
+
+      final response = await ApiService().validateDocument(
+        docType: 'tenth_memo',
+        formData: formData,
+        file: _selectedFile!,
+        userId: userId,
+      );
+
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => ValidationResultsTenthMemoPage(
+                  name: _nameController.text,
+                  fatherName: _fatherNameController.text,
+                  rollNumber: _rollNumberController.text,
+                  schoolName: _schoolNameController.text,
+                  gpa: _gpaController.text,
+                  validationResponse: response,
+                ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Validation failed: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -303,7 +378,7 @@ class _VerifyTenthMemoPageState extends State<VerifyTenthMemoPage> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.help, color: Colors.blue),
+              leading: const Icon(Icons.help, color: Colors.blue),
               title: Text(
                 'Help & FAQ',
                 style: GoogleFonts.poppins(fontSize: 16),
@@ -323,7 +398,6 @@ class _VerifyTenthMemoPageState extends State<VerifyTenthMemoPage> {
               onTap: () async {
                 try {
                   await FirebaseAuth.instance.signOut();
-                  print('Logout successful');
                   if (mounted) {
                     Navigator.pushReplacement(
                       context,
@@ -333,7 +407,6 @@ class _VerifyTenthMemoPageState extends State<VerifyTenthMemoPage> {
                     );
                   }
                 } catch (e) {
-                  print('Logout failed: $e');
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Logout failed: $e')),
@@ -347,68 +420,63 @@ class _VerifyTenthMemoPageState extends State<VerifyTenthMemoPage> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 20),
-            _buildEditableField('NAME', 'Enter your name', _nameController),
-            const SizedBox(height: 20),
-            _buildEditableField(
-              "FATHER'S NAME",
-              'Enter father\'s name',
-              _fatherNameController,
-            ),
-            const SizedBox(height: 20),
-            _buildEditableField(
-              'ROLL NUMBER',
-              'Enter roll number',
-              _rollNumberController,
-            ),
-            const SizedBox(height: 20),
-            _buildEditableField(
-              'SCHOOL NAME',
-              'Enter school name',
-              _schoolNameController,
-            ),
-            const SizedBox(height: 20),
-            _buildEditableField('GPA', 'Enter GPA', _gpaController),
-            const SizedBox(height: 20),
-            _buildUploadButton(),
-            const SizedBox(height: 30),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => ValidationResultsTenthMemoPage(
-                            name: _nameController.text,
-                            fatherName: _fatherNameController.text,
-                            rollNumber: _rollNumberController.text,
-                            schoolName: _schoolNameController.text,
-                            gpa: _gpaController.text,
-                          ),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+              _buildEditableField('NAME', 'Enter your name', _nameController),
+              const SizedBox(height: 20),
+              _buildEditableField(
+                "FATHER'S NAME",
+                'Enter father\'s name',
+                _fatherNameController,
+              ),
+              const SizedBox(height: 20),
+              _buildEditableField(
+                'ROLL NUMBER',
+                'Enter roll number',
+                _rollNumberController,
+              ),
+              const SizedBox(height: 20),
+              _buildEditableField(
+                'SCHOOL NAME',
+                'Enter school name',
+                _schoolNameController,
+              ),
+              const SizedBox(height: 20),
+              _buildEditableField('GPA', 'Enter GPA', _gpaController),
+              const SizedBox(height: 20),
+              _buildUploadButton(),
+              const SizedBox(height: 30),
+              Center(
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _validateDocument,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
                     ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 15,
+                    ),
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 15,
-                  ),
-                ),
-                child: Text(
-                  'VERIFY',
-                  style: GoogleFonts.poppins(fontSize: 18, color: Colors.white),
+                  child:
+                      _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                            'VERIFY',
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              color: Colors.white,
+                            ),
+                          ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

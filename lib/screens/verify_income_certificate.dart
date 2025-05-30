@@ -5,7 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'settings_page.dart';
 import 'login_screen.dart';
 import 'faq_help_screen.dart';
-import 'validation_results_incomecertificate.dart'; // Import for navigation
+import 'validation_results_incomecertificate.dart';
+import '../services/api_service.dart';
+import 'dart:io';
 
 class VerifyIncomeCertificatePage extends StatefulWidget {
   const VerifyIncomeCertificatePage({super.key});
@@ -17,12 +19,14 @@ class VerifyIncomeCertificatePage extends StatefulWidget {
 
 class _VerifyIncomeCertificatePageState
     extends State<VerifyIncomeCertificatePage> {
+  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _fatherNameController = TextEditingController();
   final _applicationNumberController = TextEditingController();
   final _dateController = TextEditingController();
   String? _uploadedFileName;
   String? _filePath;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -33,7 +37,6 @@ class _VerifyIncomeCertificatePageState
     super.dispose();
   }
 
-  // Build editable input field
   Widget _buildEditableField(
     String label,
     String hintText,
@@ -63,12 +66,17 @@ class _VerifyIncomeCertificatePageState
             ),
           ),
           style: GoogleFonts.poppins(fontSize: 16),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'This field is required';
+            }
+            return null;
+          },
         ),
       ],
     );
   }
 
-  // Build upload button
   Widget _buildUploadButton() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,35 +166,46 @@ class _VerifyIncomeCertificatePageState
                   ),
                   const SizedBox(width: 5),
                   ElevatedButton(
-                    onPressed: () async {
-                      await FilePicker.platform.clearTemporaryFiles();
-                      print('Cleared temporary files');
+                    onPressed:
+                        _isLoading
+                            ? null
+                            : () async {
+                              await FilePicker.platform.clearTemporaryFiles();
+                              print('Cleared temporary files');
 
-                      try {
-                        FilePickerResult? result = await FilePicker.platform
-                            .pickFiles(
-                              type: FileType.custom,
-                              allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-                            );
+                              try {
+                                FilePickerResult? result = await FilePicker
+                                    .platform
+                                    .pickFiles(
+                                      type: FileType.custom,
+                                      allowedExtensions: [
+                                        'pdf',
+                                        'jpg',
+                                        'jpeg',
+                                        'png',
+                                      ],
+                                    );
 
-                        if (result != null && result.files.isNotEmpty) {
-                          setState(() {
-                            _uploadedFileName = result.files.first.name;
-                            _filePath = result.files.first.path;
-                            print(
-                              'File selected: $_uploadedFileName, Path: $_filePath',
-                            );
-                          });
-                        } else {
-                          print('No file selected');
-                        }
-                      } catch (e) {
-                        print('Error picking file: $e');
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error picking file: $e')),
-                        );
-                      }
-                    },
+                                if (result != null && result.files.isNotEmpty) {
+                                  setState(() {
+                                    _uploadedFileName = result.files.first.name;
+                                    _filePath = result.files.first.path;
+                                    print(
+                                      'File selected: $_uploadedFileName, Path: $_filePath',
+                                    );
+                                  });
+                                } else {
+                                  print('No file selected');
+                                }
+                              } catch (e) {
+                                print('Error picking file: $e');
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error picking file: $e'),
+                                  ),
+                                );
+                              }
+                            },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       shape: RoundedRectangleBorder(
@@ -212,13 +231,16 @@ class _VerifyIncomeCertificatePageState
                   alignment: Alignment.centerRight,
                   child: IconButton(
                     icon: const Icon(Icons.clear, color: Colors.red),
-                    onPressed: () {
-                      setState(() {
-                        _uploadedFileName = null;
-                        _filePath = null;
-                        print('File selection cleared');
-                      });
-                    },
+                    onPressed:
+                        _isLoading
+                            ? null
+                            : () {
+                              setState(() {
+                                _uploadedFileName = null;
+                                _filePath = null;
+                                print('File selection cleared');
+                              });
+                            },
                   ),
                 ),
             ],
@@ -226,6 +248,74 @@ class _VerifyIncomeCertificatePageState
         ),
       ],
     );
+  }
+
+  Future<void> _validateDocument() async {
+    if (!_formKey.currentState!.validate() || _filePath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _filePath == null
+                ? 'Please upload a document'
+                : 'Please fill all fields',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      final formData = {
+        'name': _nameController.text,
+        'father_name': _fatherNameController.text,
+        'application_number': _applicationNumberController.text,
+        'date': _dateController.text,
+      };
+
+      final response = await ApiService().validateDocument(
+        docType: 'income_certificate',
+        formData: formData,
+        file: File(_filePath!),
+        userId: userId,
+      );
+
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => ValidationResultsIncomeCertificatePage(
+                  name: _nameController.text,
+                  fatherName: _fatherNameController.text,
+                  applicationNumber: _applicationNumberController.text,
+                  date: _dateController.text,
+                  validationResponse: response,
+                ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Validation failed: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -347,62 +437,57 @@ class _VerifyIncomeCertificatePageState
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 20),
-            _buildEditableField('NAME', 'Enter your name', _nameController),
-            const SizedBox(height: 20),
-            _buildEditableField(
-              "FATHER'S NAME",
-              'Enter father\'s name',
-              _fatherNameController,
-            ),
-            const SizedBox(height: 20),
-            _buildEditableField(
-              'APPLICATION NUMBER',
-              'Enter application number',
-              _applicationNumberController,
-            ),
-            const SizedBox(height: 20),
-            _buildEditableField('DATE', 'DD/MM/YYYY', _dateController),
-            const SizedBox(height: 20),
-            _buildUploadButton(),
-            const SizedBox(height: 30),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => ValidationResultsIncomeCertificatePage(
-                            name: _nameController.text,
-                            fatherName: _fatherNameController.text,
-                            applicationNumber:
-                                _applicationNumberController.text,
-                            date: _dateController.text,
-                          ),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+              _buildEditableField('NAME', 'Enter your name', _nameController),
+              const SizedBox(height: 20),
+              _buildEditableField(
+                "FATHER'S NAME",
+                'Enter father\'s name',
+                _fatherNameController,
+              ),
+              const SizedBox(height: 20),
+              _buildEditableField(
+                'APPLICATION NUMBER',
+                'Enter application number',
+                _applicationNumberController,
+              ),
+              const SizedBox(height: 20),
+              _buildEditableField('DATE', 'DD/MM/YYYY', _dateController),
+              const SizedBox(height: 20),
+              _buildUploadButton(),
+              const SizedBox(height: 30),
+              Center(
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _validateDocument,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
                     ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 15,
+                    ),
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 15,
-                  ),
-                ),
-                child: Text(
-                  'VERIFY',
-                  style: GoogleFonts.poppins(fontSize: 18, color: Colors.white),
+                  child:
+                      _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                            'VERIFY',
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              color: Colors.white,
+                            ),
+                          ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

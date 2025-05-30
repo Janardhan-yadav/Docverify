@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'settings_page.dart';
 import 'login_screen.dart';
 import 'faq_help_screen.dart';
-import 'verify_transfer_certificate.dart';
 import 'verify_caste_certificate.dart'; // Import for navigation
 
 class ValidationResultsTransferCertificatePage extends StatelessWidget {

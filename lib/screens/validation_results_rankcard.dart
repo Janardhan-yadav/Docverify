@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../models/validation_response.dart';
 import 'settings_page.dart';
 import 'login_screen.dart';
 import 'faq_help_screen.dart';
-import 'verify_rank_card.dart';
-import 'verify_allotment_order.dart'; // Add this import for VerifyAllotmentOrderPage
+import 'verify_allotment_order.dart';
 
 class ValidationResultsRankCardPage extends StatelessWidget {
   final String name;
@@ -15,6 +15,7 @@ class ValidationResultsRankCardPage extends StatelessWidget {
   final String totalMarks;
   final String rank;
   final String registrationNumber;
+  final ValidationResponse validationResponse;
 
   const ValidationResultsRankCardPage({
     super.key,
@@ -25,23 +26,14 @@ class ValidationResultsRankCardPage extends StatelessWidget {
     required this.totalMarks,
     required this.rank,
     required this.registrationNumber,
+    required this.validationResponse,
   });
-
-  // Simple validation logic (replace with actual backend validation)
-  bool _isValidField(String field) {
-    return field.isNotEmpty && field.length >= 3; // Example validation rule
-  }
 
   @override
   Widget build(BuildContext context) {
-    // Simulate validation results based on the updated image
-    bool isNameValid = _isValidField(name);
-    bool isFatherNameValid = _isValidField(fatherName);
-    bool isHallTicketValid = _isValidField(hallTicketNumber);
-    bool isCategoryValid = _isValidField(category);
-    bool isTotalMarksValid = _isValidField(totalMarks);
-    bool isRankValid = _isValidField(rank);
-    bool isRegistrationNumberValid = _isValidField(registrationNumber);
+    bool isValid = validationResponse.status == 'Validation Successful';
+    Map<String, ValidationResult> mismatches =
+        validationResponse.validationResult;
     final currentUser = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
@@ -135,7 +127,6 @@ class ValidationResultsRankCardPage extends StatelessWidget {
               onTap: () async {
                 try {
                   await FirebaseAuth.instance.signOut();
-                  print('Logout successful');
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
@@ -143,7 +134,6 @@ class ValidationResultsRankCardPage extends StatelessWidget {
                     ),
                   );
                 } catch (e) {
-                  print('Logout failed: $e');
                   ScaffoldMessenger.of(
                     context,
                   ).showSnackBar(SnackBar(content: Text('Logout failed: $e')));
@@ -178,15 +168,15 @@ class ValidationResultsRankCardPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Matched Columns',
+                      'Validation Status',
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Colors.green,
+                        color: isValid ? Colors.green : Colors.red,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildResultRow('CATEGORY', isCategoryValid),
+                    _buildResultRow('Overall Result', isValid),
                   ],
                 ),
               ),
@@ -203,43 +193,36 @@ class ValidationResultsRankCardPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Discrepancies',
+                      'Details',
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Colors.red,
+                        color: Colors.indigo,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildResultRow('NAME', isNameValid),
-                    _buildResultRow("FATHER'S NAME", isFatherNameValid),
-                    _buildResultRow('HALL TICKET', isHallTicketValid),
-                    _buildResultRow('TOTAL MARKS', isTotalMarksValid),
-                    _buildResultRow('RANK', isRankValid),
-                    _buildResultRow(
-                      'REGISTRATION NUMBER',
-                      isRegistrationNumberValid,
+                    ...mismatches.entries.map(
+                      (entry) =>
+                          _buildDetailRow(entry.key, entry.value.isValid),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(
-              height: 24,
-            ), // Extra padding to prevent overlap with buttons
+            const SizedBox(height: 24),
           ],
         ),
       ),
       bottomNavigationBar: SafeArea(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-          color: Colors.white, // Ensure background blends with screen
+          color: Colors.white,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               OutlinedButton(
                 onPressed: () {
-                  Navigator.pop(context); // Go back to the previous screen
+                  Navigator.pop(context);
                 },
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.grey),
@@ -304,6 +287,32 @@ class ValidationResultsRankCardPage extends StatelessWidget {
           Text(
             label,
             style: GoogleFonts.poppins(fontSize: 16, color: Colors.black87),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String field, bool isValid) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Icon(
+            isValid ? Icons.check_circle : Icons.cancel,
+            color: isValid ? Colors.green : Colors.red,
+            size: 28,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            field.toUpperCase(),
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
           ),
         ],
       ),

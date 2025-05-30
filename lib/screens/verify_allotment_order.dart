@@ -1,11 +1,15 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:path_provider/path_provider.dart';
+import '../services/api_service.dart';
+import '../models/validation_response.dart';
 import 'settings_page.dart';
 import 'login_screen.dart';
 import 'faq_help_screen.dart';
-import 'validation_results_allotment.dart'; // Add this import for ValidationResultsAllotmentPage
+import 'validation_results_allotment.dart';
 
 class VerifyAllotmentOrderPage extends StatefulWidget {
   const VerifyAllotmentOrderPage({super.key});
@@ -16,6 +20,7 @@ class VerifyAllotmentOrderPage extends StatefulWidget {
 }
 
 class _VerifyAllotmentOrderPageState extends State<VerifyAllotmentOrderPage> {
+  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _fatherNameController = TextEditingController();
   final _hallTicketController = TextEditingController();
@@ -24,7 +29,8 @@ class _VerifyAllotmentOrderPageState extends State<VerifyAllotmentOrderPage> {
   final _feesController = TextEditingController();
   String? _selectedCategory;
   String? _uploadedFileName;
-  String? _filePath;
+  File? _selectedFile;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -37,12 +43,122 @@ class _VerifyAllotmentOrderPageState extends State<VerifyAllotmentOrderPage> {
     super.dispose();
   }
 
-  // Build editable input field
+  Future<void> _pickFile() async {
+    await FilePicker.platform.clearTemporaryFiles();
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      );
+      if (result != null && result.files.isNotEmpty) {
+        setState(() {
+          _uploadedFileName = result.files.first.name;
+          if (result.files.first.path != null) {
+            _selectedFile = File(result.files.first.path!);
+          } else if (result.files.first.bytes != null) {
+            _writeToTempFile(result.files.first.bytes!, _uploadedFileName!);
+          }
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error picking file: $e')));
+    }
+  }
+
+  Future<void> _writeToTempFile(List<int> bytes, String fileName) async {
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/$fileName');
+      await tempFile.writeAsBytes(bytes);
+      setState(() {
+        _selectedFile = tempFile;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error writing file: $e')));
+    }
+  }
+
+  Future<void> _validateDocument() async {
+    if (!_formKey.currentState!.validate() || _selectedFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _selectedFile == null
+                ? 'Please upload a document'
+                : 'Please fill all required fields',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      final formData = {
+        'name': _nameController.text,
+        'father_name': _fatherNameController.text,
+        'hall_ticket_no': _hallTicketController.text,
+        'registration_no': _registrationController.text,
+        'category': _selectedCategory ?? 'GENERAL',
+        'branch': _branchController.text,
+        'fees': _feesController.text,
+      };
+
+      final response = await ApiService().validateDocument(
+        docType: 'allotment_order',
+        formData: formData,
+        file: _selectedFile!,
+        userId: userId,
+      );
+
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => ValidationResultsAllotmentPage(
+                  name: _nameController.text,
+                  fatherName: _fatherNameController.text,
+                  hallTicketNumber: _hallTicketController.text,
+                  registrationNumber: _registrationController.text,
+                  category: _selectedCategory ?? 'GENERAL',
+                  branch: _branchController.text,
+                  fees: _feesController.text,
+                  validationResponse: response,
+                ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Validation failed: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   Widget _buildEditableField(
     String label,
     String hintText,
-    TextEditingController controller,
-  ) {
+    TextEditingController controller, {
+    bool isRequired = true,
+    bool isNumeric = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -67,12 +183,21 @@ class _VerifyAllotmentOrderPageState extends State<VerifyAllotmentOrderPage> {
             ),
           ),
           style: GoogleFonts.poppins(fontSize: 16),
+          keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
+          validator: (value) {
+            if (isRequired && (value == null || value.isEmpty)) {
+              return 'This field is required';
+            }
+            if (isNumeric && value != null && double.tryParse(value) == null) {
+              return 'Please enter a valid number';
+            }
+            return null;
+          },
         ),
       ],
     );
   }
 
-  // Build category dropdown
   Widget _buildCategoryDropdown() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,7 +247,6 @@ class _VerifyAllotmentOrderPageState extends State<VerifyAllotmentOrderPage> {
     );
   }
 
-  // Build upload button
   Widget _buildUploadButton() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,35 +336,7 @@ class _VerifyAllotmentOrderPageState extends State<VerifyAllotmentOrderPage> {
                   ),
                   const SizedBox(width: 5),
                   ElevatedButton(
-                    onPressed: () async {
-                      await FilePicker.platform.clearTemporaryFiles();
-                      print('Cleared temporary files');
-
-                      try {
-                        FilePickerResult? result = await FilePicker.platform
-                            .pickFiles(
-                              type: FileType.custom,
-                              allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-                            );
-
-                        if (result != null && result.files.isNotEmpty) {
-                          setState(() {
-                            _uploadedFileName = result.files.first.name;
-                            _filePath = result.files.first.path;
-                            print(
-                              'File selected: $_uploadedFileName, Path: $_filePath',
-                            );
-                          });
-                        } else {
-                          print('No file selected');
-                        }
-                      } catch (e) {
-                        print('Error picking file: $e');
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error picking file: $e')),
-                        );
-                      }
-                    },
+                    onPressed: _isLoading ? null : _pickFile,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       shape: RoundedRectangleBorder(
@@ -266,13 +362,15 @@ class _VerifyAllotmentOrderPageState extends State<VerifyAllotmentOrderPage> {
                   alignment: Alignment.centerRight,
                   child: IconButton(
                     icon: const Icon(Icons.clear, color: Colors.red),
-                    onPressed: () {
-                      setState(() {
-                        _uploadedFileName = null;
-                        _filePath = null;
-                        print('File selection cleared');
-                      });
-                    },
+                    onPressed:
+                        _isLoading
+                            ? null
+                            : () {
+                              setState(() {
+                                _uploadedFileName = null;
+                                _selectedFile = null;
+                              });
+                            },
                   ),
                 ),
             ],
@@ -377,7 +475,6 @@ class _VerifyAllotmentOrderPageState extends State<VerifyAllotmentOrderPage> {
               onTap: () async {
                 try {
                   await FirebaseAuth.instance.signOut();
-                  print('Logout successful');
                   if (mounted) {
                     Navigator.pushReplacement(
                       context,
@@ -387,7 +484,6 @@ class _VerifyAllotmentOrderPageState extends State<VerifyAllotmentOrderPage> {
                     );
                   }
                 } catch (e) {
-                  print('Logout failed: $e');
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Logout failed: $e')),
@@ -399,77 +495,89 @@ class _VerifyAllotmentOrderPageState extends State<VerifyAllotmentOrderPage> {
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 20),
-            _buildEditableField('NAME', 'Enter your name', _nameController),
-            const SizedBox(height: 20),
-            _buildEditableField(
-              "FATHER'S NAME",
-              'Enter father\'s name',
-              _fatherNameController,
-            ),
-            const SizedBox(height: 20),
-            _buildEditableField(
-              'HALL TICKET NUMBER',
-              'Enter hall ticket number',
-              _hallTicketController,
-            ),
-            const SizedBox(height: 20),
-            _buildEditableField(
-              'REGISTRATION NUMBER',
-              'Enter registration number',
-              _registrationController,
-            ),
-            const SizedBox(height: 20),
-            _buildCategoryDropdown(),
-            const SizedBox(height: 20),
-            _buildEditableField('BRANCH', 'Enter branch', _branchController),
-            const SizedBox(height: 20),
-            _buildEditableField('FEES', 'Enter fees', _feesController),
-            const SizedBox(height: 20),
-            _buildUploadButton(),
-            const SizedBox(height: 30),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => ValidationResultsAllotmentPage(
-                            name: _nameController.text,
-                            fatherName: _fatherNameController.text,
-                            hallTicketNumber: _hallTicketController.text,
-                            registrationNumber: _registrationController.text,
-                            category: _selectedCategory ?? 'GENERAL',
-                            branch: _branchController.text,
-                            fees: _feesController.text,
-                          ),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(20.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  _buildEditableField(
+                    'NAME',
+                    'Enter your name',
+                    _nameController,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildEditableField(
+                    "FATHER'S NAME",
+                    'Enter father\'s name',
+                    _fatherNameController,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildEditableField(
+                    'HALL TICKET NUMBER',
+                    'Enter hall ticket number',
+                    _hallTicketController,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildEditableField(
+                    'REGISTRATION NUMBER',
+                    'Enter registration number',
+                    _registrationController,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildCategoryDropdown(),
+                  const SizedBox(height: 20),
+                  _buildEditableField(
+                    'BRANCH',
+                    'Enter branch',
+                    _branchController,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildEditableField(
+                    'FEES',
+                    'Enter fees',
+                    _feesController,
+                    isNumeric: true,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildUploadButton(),
+                  const SizedBox(height: 30),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _validateDocument,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 40,
+                          vertical: 15,
+                        ),
+                      ),
+                      child: Text(
+                        'VERIFY',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 15,
-                  ),
-                ),
-                child: Text(
-                  'VERIFY',
-                  style: GoogleFonts.poppins(fontSize: 18, color: Colors.white),
-                ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+          if (_isLoading)
+            Container(
+              color: Colors.black54,
+              child: const Center(child: CircularProgressIndicator()),
+            ),
+        ],
       ),
     );
   }

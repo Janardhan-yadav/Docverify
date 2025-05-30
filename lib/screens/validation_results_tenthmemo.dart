@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'settings_page.dart';
-import 'login_screen.dart';
-import 'faq_help_screen.dart';
-import 'verify_tenth_memo.dart';
-import 'verify_transfer_certificate.dart'; // Import for navigation
+import '../screens/settings_page.dart';
+import '../screens/login_screen.dart';
+import '../screens/faq_help_screen.dart';
+import '../screens/verify_caste_certificate.dart'; // Import for navigation
+import '../models/validation_response.dart';
 
 class ValidationResultsTenthMemoPage extends StatelessWidget {
   final String name;
@@ -13,6 +13,7 @@ class ValidationResultsTenthMemoPage extends StatelessWidget {
   final String rollNumber;
   final String schoolName;
   final String gpa;
+  final ValidationResponse validationResponse;
 
   const ValidationResultsTenthMemoPage({
     super.key,
@@ -21,21 +22,15 @@ class ValidationResultsTenthMemoPage extends StatelessWidget {
     required this.rollNumber,
     required this.schoolName,
     required this.gpa,
+    required this.validationResponse,
   });
-
-  // Simple validation logic (replace with actual backend validation)
-  bool _isValidField(String field) {
-    return field.isNotEmpty && field.length >= 3; // Example validation rule
-  }
 
   @override
   Widget build(BuildContext context) {
-    // Simulate validation results (SCHOOL NAME is valid, others are invalid for demo)
-    bool isNameValid = _isValidField(name);
-    bool isFatherNameValid = _isValidField(fatherName);
-    bool isRollNumberValid = _isValidField(rollNumber);
-    bool isSchoolNameValid = _isValidField(schoolName);
-    bool isGpaValid = _isValidField(gpa);
+    bool isValid = validationResponse.status == 'Validation Successful';
+    Map<String, ValidationResult> mismatches =
+        validationResponse.validationResult;
+
     final currentUser = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
@@ -129,7 +124,6 @@ class ValidationResultsTenthMemoPage extends StatelessWidget {
               onTap: () async {
                 try {
                   await FirebaseAuth.instance.signOut();
-                  print('Logout successful');
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
@@ -137,7 +131,6 @@ class ValidationResultsTenthMemoPage extends StatelessWidget {
                     ),
                   );
                 } catch (e) {
-                  print('Logout failed: $e');
                   ScaffoldMessenger.of(
                     context,
                   ).showSnackBar(SnackBar(content: Text('Logout failed: $e')));
@@ -172,16 +165,15 @@ class ValidationResultsTenthMemoPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Matched Columns',
+                      'Validation Status',
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Colors.green,
+                        color: isValid ? Colors.green : Colors.red,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    if (isSchoolNameValid)
-                      _buildResultRow('SCHOOL NAME', isSchoolNameValid),
+                    _buildResultRow('Overall Result', isValid),
                   ],
                 ),
               ),
@@ -198,29 +190,23 @@ class ValidationResultsTenthMemoPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Discrepancies',
+                      'Details',
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Colors.red,
+                        color: Colors.indigo,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    if (!isNameValid) _buildResultRow('NAME', isNameValid),
-                    if (!isFatherNameValid)
-                      _buildResultRow("FATHER'S NAME", isFatherNameValid),
-                    if (!isRollNumberValid)
-                      _buildResultRow('ROLL NUMBER', isRollNumberValid),
-                    if (!isSchoolNameValid)
-                      _buildResultRow('SCHOOL NAME', isSchoolNameValid),
-                    if (!isGpaValid) _buildResultRow('GPA', isGpaValid),
+                    ...mismatches.entries.map(
+                      (entry) =>
+                          _buildDetailRow(entry.key, entry.value.isValid),
+                    ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(
-              height: 24,
-            ), // Extra padding to prevent overlap with buttons
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -233,7 +219,7 @@ class ValidationResultsTenthMemoPage extends StatelessWidget {
             children: [
               OutlinedButton(
                 onPressed: () {
-                  Navigator.pop(context); // Go back to the previous screen
+                  Navigator.pop(context);
                 },
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.grey),
@@ -251,15 +237,19 @@ class ValidationResultsTenthMemoPage extends StatelessWidget {
                 ),
               ),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => const VerifyTransferCertificatePage(),
-                    ),
-                  );
-                },
+                onPressed:
+                    isValid
+                        ? () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) =>
+                                      const VerifyCasteCertificatePage(),
+                            ),
+                          );
+                        }
+                        : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   shape: RoundedRectangleBorder(
@@ -299,6 +289,32 @@ class ValidationResultsTenthMemoPage extends StatelessWidget {
           Text(
             label,
             style: GoogleFonts.poppins(fontSize: 16, color: Colors.black87),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String field, bool isValid) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Icon(
+            isValid ? Icons.check_circle : Icons.cancel,
+            color: isValid ? Colors.green : Colors.red,
+            size: 28,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            field.toUpperCase(),
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
           ),
         ],
       ),

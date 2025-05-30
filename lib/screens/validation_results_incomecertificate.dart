@@ -4,14 +4,15 @@ import 'package:google_fonts/google_fonts.dart';
 import 'settings_page.dart';
 import 'login_screen.dart';
 import 'faq_help_screen.dart';
-import 'verify_income_certificate.dart';
-import 'document_validation_summary.dart'; // Import for navigation
+import 'document_validation_summary.dart';
+import '../models/validation_response.dart';
 
 class ValidationResultsIncomeCertificatePage extends StatelessWidget {
   final String name;
   final String fatherName;
   final String applicationNumber;
   final String date;
+  final ValidationResponse validationResponse;
 
   const ValidationResultsIncomeCertificatePage({
     super.key,
@@ -19,21 +20,19 @@ class ValidationResultsIncomeCertificatePage extends StatelessWidget {
     required this.fatherName,
     required this.applicationNumber,
     required this.date,
+    required this.validationResponse,
   });
-
-  // Simple validation logic (replace with actual backend validation)
-  bool _isValidField(String field) {
-    return field.isNotEmpty && field.length >= 3; // Example validation rule
-  }
 
   @override
   Widget build(BuildContext context) {
-    // Simulate validation results (APPLICATION NUMBER is valid, others are invalid for demo)
-    bool isNameValid = _isValidField(name);
-    bool isFatherNameValid = _isValidField(fatherName);
-    bool isApplicationNumberValid = _isValidField(applicationNumber);
-    bool isDateValid = _isValidField(date);
+    final validationResult = validationResponse.validationResult;
     final currentUser = FirebaseAuth.instance.currentUser;
+
+    bool isNameValid = validationResult['name']?.isValid ?? false;
+    bool isFatherNameValid = validationResult['father_name']?.isValid ?? false;
+    bool isApplicationNumberValid =
+        validationResult['application_number']?.isValid ?? false;
+    bool isDateValid = validationResult['date']?.isValid ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -177,11 +176,15 @@ class ValidationResultsIncomeCertificatePage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
+                    if (isNameValid) _buildResultRow('NAME', isNameValid),
+                    if (isFatherNameValid)
+                      _buildResultRow("FATHER'S NAME", isFatherNameValid),
                     if (isApplicationNumberValid)
                       _buildResultRow(
                         'APPLICATION NUMBER',
                         isApplicationNumberValid,
                       ),
+                    if (isDateValid) _buildResultRow('DATE', isDateValid),
                   ],
                 ),
               ),
@@ -219,9 +222,7 @@ class ValidationResultsIncomeCertificatePage extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(
-              height: 24,
-            ), // Extra padding to prevent overlap with buttons
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -234,7 +235,7 @@ class ValidationResultsIncomeCertificatePage extends StatelessWidget {
             children: [
               OutlinedButton(
                 onPressed: () {
-                  Navigator.pop(context); // Go back to the previous screen
+                  Navigator.pop(context);
                 },
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.grey),
